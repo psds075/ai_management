@@ -12,6 +12,7 @@ DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
 DEBUG_MODE = False 
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL']
+#test
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
