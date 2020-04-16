@@ -45,6 +45,7 @@ def viewer(DATASET_NAME):
                 df = df.append({"FILENAME":filename}, ignore_index=True)
         if(check_row == True):
             df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+            df = df.fillna('')
 
         check_column = False
         for column in TABLE_LIST:
@@ -53,13 +54,14 @@ def viewer(DATASET_NAME):
                 df[column] = ''
         if(check_column == True):
             df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+            df = df.fillna('')
 
         datalist = []
         for i in range(len(df)):
             if(df['REVIEW_CHECK'].iloc[i] == ''):
                 df['REVIEW_CHECK'].iloc[i] = 'UNREAD'
             data = {'FILENAME' : df['FILENAME'].iloc[i],
-                    'SEX' : df['SEX'].iloc[i], 
+                    'SEX' : str(df['SEX'].iloc[i]), 
                     'AGE' : str(df['AGE'].iloc[i]), 
                     'STATUS':'N/A',
                     'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i])
