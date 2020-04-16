@@ -26,9 +26,6 @@ def viewer(DATASET_NAME):
         datasetlist = []
         for DIR in os.listdir(BASE_DIR):
             if(os.path.isdir(BASE_DIR+DIR)):
-                if not os.path.isfile(BASE_DIR+DIR+'.xls'):
-                    df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
-                    df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
         return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist)
     else:
@@ -36,8 +33,19 @@ def viewer(DATASET_NAME):
         global DB_NAME
         DB_NAME = DATASET_NAME
         DB_DIR = BASE_DIR + DATASET_NAME + '/'
+        if not os.path.isfile(BASE_DIR+DATASET_NAME+'.xls'):
+            df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DATASET_NAME)})
+            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, float_format=None)
         df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
         df = df.fillna('')
+
+        check_row = False
+        for filename in os.listdir(BASE_DIR+DATASET_NAME):
+            if not (filename in list(df.FILENAME)):
+                df = df.append({"FILENAME":filename}, ignore_index=True)
+        if(check_row == True):
+            df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+
         check_column = False
         for column in TABLE_LIST:
             if not column in df.columns.tolist():
@@ -45,6 +53,7 @@ def viewer(DATASET_NAME):
                 df[column] = ''
         if(check_column == True):
             df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+
         datalist = []
         for i in range(len(df)):
             if(df['REVIEW_CHECK'].iloc[i] == ''):
