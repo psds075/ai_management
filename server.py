@@ -7,7 +7,7 @@ import pandas as pd
 app = Flask(__name__)
 
 DB_INFO = 'DB_INFO'
-BASE_DIR = '/Project/8. Web Service/2. AI Management Solution/DB/'
+BASE_DIR = '/Deployed/AI Management Solution/DB/'
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
 DEBUG_MODE = False 
