@@ -27,6 +27,9 @@ def viewer(DATASET_NAME):
         datasetlist = []
         for DIR in os.listdir(BASE_DIR):
             if(os.path.isdir(BASE_DIR+DIR)):
+                if not os.path.isfile(BASE_DIR+DIR+'.xls'):
+                    df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
+                    df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
         return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist)
     else:
@@ -44,9 +47,11 @@ def viewer(DATASET_NAME):
         for filename in os.listdir(BASE_DIR+DATASET_NAME):
             if not (filename in list(df.FILENAME)):
                 df = df.append({"FILENAME":filename}, ignore_index=True)
+                check_row = True
         if(check_row == True):
-            df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
             df = df.fillna('')
+            df = df.sort_values(by=["FILENAME"])
+            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
 
         check_column = False
         for column in TABLE_LIST:
@@ -54,10 +59,11 @@ def viewer(DATASET_NAME):
                 check_column = True
                 df[column] = ''
         if(check_column == True):
-            df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
             df = df.fillna('')
 
         datalist = []
+        df = df.sort_values(by=["FILENAME"])
         for i in range(len(df)):
             if(df['REVIEW_CHECK'].iloc[i] == ''):
                 df['REVIEW_CHECK'].iloc[i] = 'UNREAD'
@@ -68,6 +74,7 @@ def viewer(DATASET_NAME):
                     'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i])
                     }
             datalist.append(data)
+            
         datasetlist = []
         for DIR in os.listdir(BASE_DIR):
             if(os.path.isdir(BASE_DIR+DIR)):
