@@ -6,11 +6,14 @@ import pandas as pd
 
 app = Flask(__name__)
 
+with open('env.json') as json_file:
+    data = json.load(json_file)
+
 DB_INFO = 'DB_INFO'
-BASE_DIR = '/Deployed/AI Management Solution/DB/'
+BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
-DEBUG_MODE = False 
+DEBUG_MODE = True 
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL']
 
 
@@ -96,7 +99,7 @@ def sending_data():
                     'STATUS':str(df['STATUS'].iloc[i]),
                     'TMJ_LEFT':str(df['TMJ_LEFT'].iloc[i]), 
                     'TMJ_RIGHT':str(df['TMJ_RIGHT'].iloc[i]),
-                    'OSTEOPOROSI':str(df['OSTEOPOROSIS'].iloc[i]), 
+                    'OSTEOPOROSIS':str(df['OSTEOPOROSIS'].iloc[i]), 
                     'COMMENT_TEXT':str(df['COMMENT_TEXT'].iloc[i]),
                     'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
                     'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i])
