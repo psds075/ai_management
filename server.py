@@ -34,7 +34,7 @@ def viewer(DATASET_NAME):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist)
+        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME)
     else:
         global DB_DIR
         global DB_NAME
@@ -85,7 +85,7 @@ def viewer(DATASET_NAME):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist)
+        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME)
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
@@ -130,7 +130,7 @@ def sending_data():
         return json.dumps(json.dumps(data))
 
     if(request.json['ORDER'] == 'LABEL'):
-        print('check')
+
         df = pd.read_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', na_rep='')
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
         df[request.json['PARAMETER']].iloc[i]=str(request.json['SETVALUE'])
@@ -159,7 +159,7 @@ def sending_data():
 
 @app.route('/database/<path:path>')
 def database(path):
-    return send_from_directory(DB_DIR, path) 
+    return send_from_directory(BASE_DIR, path) 
 
 if __name__ == '__main__':
     app.run(debug=True, host = '0.0.0.0', port = 80)

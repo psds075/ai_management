@@ -45,7 +45,7 @@
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
           onclick="openImage('{{data['FILENAME']}}')" class="img_name">
           <div class="w3-container" style='padding:0px'>
-            <div class="w3-opacity" id="xray"><img src=/database/{{data['FILENAME']}} style='height:65px;width:130px;'>
+            <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}} style='height:65px;width:130px;'>
             </div>
             <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
               {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}</div>
@@ -125,7 +125,7 @@
                 <div class="w3-grey">
                   <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
                 </div>
-                <div class="text_left f_gray">OSTEOPOROSIS<b id=TMJ_RIGHT_SCORE></b></div>
+                <div class="text_left f_gray">OSTEOPOROSIS<b id=OSTEOPOROSIS_SCORE></b></div>
                 <div class="w3-grey">
                   <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
                 </div>
@@ -223,6 +223,7 @@
 
     var FILENAME = '';
     var GUIDED_FILENAME = '';
+    var DATASET = '{{current_dataset}}';
 
     // IMAGE LABELER BLOCK
     var annotator;
@@ -234,6 +235,7 @@
         labels: ["경동맥석회화", "정맥석", "편도석회화", "경상설골인대골화", "하악골설측함요", "하악관침범", "정중과잉치", "그냥과잉치", "방사선불투과성", "방사선투과성", "저류가성낭", "치근단골형성이상", "점막비후", "상악동혼탁상", "선천적치아결손", "타석", "매복치", "상악동석", "비구개관낭", "치아종", "방사선혼합상"],
         onchange: function (entries) {
           var parameter = {};
+          parameter['DATASET'] = DATASET;
           parameter['ORDER'] = 'LABEL';
           parameter['FILENAME'] = FILENAME;
           parameter['PARAMETER'] = 'BBOX_LABEL';
@@ -242,7 +244,6 @@
           if (annotator_stop == false) {
             sendToServer(parameter);
           }
-          console.log(parameter);
         },
         width: DEVICEWIDTH - 650,
         height: (DEVICEWIDTH - 650) / 1.9
@@ -255,6 +256,7 @@
 
     $('#WRITE_BUTTON').click(function () {
       var parameter = {};
+      parameter['DATASET'] = DATASET;
       parameter['ORDER'] = 'LABEL';
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = 'COMMENT_TEXT';
@@ -389,18 +391,18 @@
       $('#main_img').css("display", "");
       $('#main_img').css("width", DEVICEWIDTH + 'px');
       $('#main_input').css("display", "");
-      $('#img2').attr("src", "/database/" + FILENAME);
-      $('#img3').attr("src", "/database/" + FILENAME);
+      $('#img2').attr("src", "/database/" + DATASET + "/" + FILENAME);
+      $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
       $('#img3').attr("width", (DEVICEWIDTH - 648) + "px");
       $('.CURRENT').attr('class', 'READ');
-      $('.image_frame').css("background-image", "url('" + "/database/" + FILENAME + "')");
+      $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).attr('class', 'CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
       sendToServer(parameter);
     }
 
     function sendCompleteLabeling() {
-      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE' };
+      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET' : DATASET };
       sendToServer(parameter);
       window.location.href = "/viewer";
     }
@@ -433,7 +435,7 @@
     function actual_image_width(FILENAME) {
       var dimension, image;
       image = new Image();
-      image.src = "/database/" + FILENAME;
+      image.src = "/database/" + DATASET + "/" + FILENAME;
       image.onload = function () {
         dimension = {
           width: image.naturalWidth,
@@ -453,7 +455,6 @@
         success: function (result) {
           if (packet['ORDER'] == 'TARGET') {
             result = JSON.parse(result);
-            console.log(result);
             if (result['TMJ_LEFT'] == '') {
               TMJ_LEFT_BUTTON_CONTROL('NONE');
             } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
@@ -503,6 +504,7 @@
 
     function generatePacket(ORDER, PARAMETER, SETVALUE) {
       var parameter = {};
+      parameter['DATASET'] = DATASET;
       parameter['ORDER'] = ORDER;
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = PARAMETER;
