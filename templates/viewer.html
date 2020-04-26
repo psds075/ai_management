@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>인공지능 융합연구소 Panarama X-Ray</title>
+<title>MEDIPARTNER AI MANAGEMENT</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../static/css/imageviewer.css" type="text/css" />
@@ -13,6 +13,16 @@
 <script src="../static/js/imageviewer.js"></script>
 <script src="../static/js/bbox_annotator.js"></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
+
+<style>
+  /* Style the search box */
+  #mySearch {
+    width: 100%;
+    font-size: 15px;
+    padding: 5px;
+    border: 1px solid #ddd;
+  }
+</style>
 
 <body>
   <!-- Side Navigation -->
@@ -39,9 +49,11 @@
       <button class="w3-button w3-grey" id="ALL_BUTTON" onclick="openTab('ALL')">ALL</button>
     </div>
 
+    <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
+
     <div id="Demo1" class="w3-animate-left">
       {% for data in datalist %}
-      <div class="{{data['REVIEW_CHECK']}}" id="{{data['FILENAME'][:-4]}}">
+      <div class="{{data['REVIEW_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}" text="{{data['FILENAME']}}">
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
           onclick="openImage('{{data['FILENAME']}}')" class="img_name">
           <div class="w3-container" style='padding:0px'>
@@ -434,6 +446,23 @@
         $('#READ_BUTTON').removeClass('w3-grey');
         $('#UNREAD_BUTTON').removeClass('w3-grey');
         $('#ALL_BUTTON').addClass('w3-grey');
+      }
+      searchFilter();
+    }
+
+    function searchFilter() {
+      input = document.getElementById("mySearch");
+      filter = input.value.toUpperCase();
+      demo_tag = document.getElementById("Demo1");
+      div_tag = $('.ARTICLE_LIST')
+      for (var i = 0; i < div_tag.length; i ++){
+        console.log(div_tag[i].id);
+        //a = div_tag[i].getElementsByTagName("a")[0];
+        if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+          div_tag[i].style.display = "";
+        } else {
+          div_tag[i].style.display = "none";
+        }
       }
     }
 
