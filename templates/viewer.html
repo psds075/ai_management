@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>인공지능 융합연구소 Panarama X-Ray</title>
+<title>MEDIPARTNER AI MANAGEMENT</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../static/css/imageviewer.css" type="text/css" />
@@ -13,6 +13,16 @@
 <script src="../static/js/imageviewer.js"></script>
 <script src="../static/js/bbox_annotator.js"></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
+
+<style>
+  /* Style the search box */
+  #mySearch {
+    width: 100%;
+    font-size: 15px;
+    padding: 5px;
+    border: 1px solid #ddd;
+  }
+</style>
 
 <body>
   <!-- Side Navigation -->
@@ -34,18 +44,22 @@
     </div>
 
     <div class="w3-bar w3-black">
-      <button class="w3-button" id="UNREAD_BUTTON" onclick="openTab('UNREAD')">UNREAD</button>
-      <button class="w3-button" id="READ_BUTTON" onclick="openTab('READ')">READ</button>
-      <button class="w3-button w3-grey" id="ALL_BUTTON" onclick="openTab('ALL')">ALL</button>
+      <button class="w3-button" id="UNCONFIRM_TAB" onclick="openTab('UNCONFIRM')">UNCONFIRM</button>
+      <button class="w3-button" id="CONFIRM_TAB" onclick="openTab('CONFIRM')">CONFIRM</button>
+      <button class="w3-button w3-grey" id="ALL_TAB" onclick="openTab('ALL')">ALL</button>
     </div>
+
+    <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
 
     <div id="Demo1" class="w3-animate-left">
       {% for data in datalist %}
-      <div class="{{data['REVIEW_CHECK']}}" id="{{data['FILENAME'][:-4]}}">
+      <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
+        text="{{data['FILENAME']}}">
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
           onclick="openImage('{{data['FILENAME']}}')" class="img_name">
           <div class="w3-container" style='padding:0px'>
-            <div class="w3-opacity" id="xray"><img src=/database/{{data['FILENAME']}} style='height:65px;width:130px;'>
+            <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}}
+                style='height:65px;width:130px;'>
             </div>
             <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
               {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}</div>
@@ -55,7 +69,7 @@
       {% endfor %}
     </div>
     <div class=center>
-      <button class=below_btn onclick='alert("구현 예정입니다.");'>START TRAINING</button>
+      <button class=below_btn onclick="alert('향후 구현 예정입니다.');">START TRAINING</button>
       <button class=below_btn onclick="document.getElementById('id03').style.display='block'">ACCURACY RESULT</button>
     </div>
   </nav>
@@ -65,7 +79,6 @@
     <div id="page1" class="w3-container person" style='margin-left:300px;'>
       <div id="main_img" style='display:none'>
         <div id="bbox_annotator" style="display:inline-block;"></div>
-        <!--img src="" id=img2 width=60%-->
       </div>
       <div id="unlabeled_img" style='display:none'>
         <img src="" id=img3 width=60%>
@@ -91,7 +104,7 @@
         </p>
         <br>
         <p>
-          <button class="w3-button w3-black">CONFORM</button>
+          <button class="w3-button w3-black" id="CONFIRM_BUTTON">CONFIRM</button>
         </p>
       </div>
       <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
@@ -125,7 +138,7 @@
                 <div class="w3-grey">
                   <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
                 </div>
-                <div class="text_left f_gray">OSTEOPOROSIS<b id=TMJ_RIGHT_SCORE></b></div>
+                <div class="text_left f_gray">OSTEOPOROSIS<b id=OSTEOPOROSIS_SCORE></b></div>
                 <div class="w3-grey">
                   <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
                 </div>
@@ -136,8 +149,11 @@
                 <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
                   id="insert_btn">INSERT</a>
               </div>
-              <div id="comment_box">
+              <div id="comment_box" style="height:calc(100% - 530px);overflow-y:scroll;width:100%;">
                 <div id='COMMENT_TEXT' style="font-weight:lighter;"></div>
+              </div>
+              <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
+                style='text-align:left;border: 0px solid black;height:100px;overflow-y:scroll;'>
               </div>
             </div>
           </div>
@@ -223,6 +239,7 @@
 
     var FILENAME = '';
     var GUIDED_FILENAME = '';
+    var DATASET = '{{current_dataset}}';
 
     // IMAGE LABELER BLOCK
     var annotator;
@@ -234,6 +251,7 @@
         labels: ["경동맥석회화", "정맥석", "편도석회화", "경상설골인대골화", "하악골설측함요", "하악관침범", "정중과잉치", "그냥과잉치", "방사선불투과성", "방사선투과성", "저류가성낭", "치근단골형성이상", "점막비후", "상악동혼탁상", "선천적치아결손", "타석", "매복치", "상악동석", "비구개관낭", "치아종"],
         onchange: function (entries) {
           var parameter = {};
+          parameter['DATASET'] = DATASET;
           parameter['ORDER'] = 'LABEL';
           parameter['FILENAME'] = FILENAME;
           parameter['PARAMETER'] = 'BBOX_LABEL';
@@ -242,7 +260,6 @@
           if (annotator_stop == false) {
             sendToServer(parameter);
           }
-          console.log(parameter);
         },
         width: DEVICEWIDTH - 650,
         height: (DEVICEWIDTH - 650) / 1.9
@@ -255,12 +272,20 @@
 
     $('#WRITE_BUTTON').click(function () {
       var parameter = {};
+      parameter['DATASET'] = DATASET;
       parameter['ORDER'] = 'LABEL';
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = 'COMMENT_TEXT';
       parameter['SETVALUE'] = $('#TEXT_AREA').val();
       $('#COMMENT_TEXT').html($('#TEXT_AREA').val());
       sendToServer(parameter);
+    });
+
+    $('#CONFIRM_BUTTON').click(function () {
+      $('#main_img').hide(200);
+      $('#main_input').hide(200);
+      commandLine(FILENAME + ' was confirmed.');
+      generatePacket('LABEL', 'CONFIRM_CHECK', 'CONFIRM');
     });
 
     var count = 0;
@@ -389,51 +414,71 @@
       $('#main_img').css("display", "");
       $('#main_img').css("width", DEVICEWIDTH + 'px');
       $('#main_input').css("display", "");
-      $('#img2').attr("src", "/database/" + FILENAME);
-      $('#img3').attr("src", "/database/" + FILENAME);
+      $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
       $('#img3').attr("width", (DEVICEWIDTH - 648) + "px");
-      $('.CURRENT').attr('class', 'READ');
-      $('.image_frame').css("background-image", "url('" + "/database/" + FILENAME + "')");
+      $('.CURRENT').addClass('READ');
+      $('.CURRENT').removeClass('CURRENT');
+      $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).attr('class', 'CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
       sendToServer(parameter);
+      commandLine(FILENAME + ' is opened.');
     }
 
     function sendCompleteLabeling() {
-      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE' };
+      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
       sendToServer(parameter);
       window.location.href = "/viewer";
     }
 
     function openTab(tabName) {
-      $('.CURRENT').attr('class', 'READ');
-      if (tabName == 'READ') {
-        $('.READ').show(200);
-        $('.UNREAD').hide(200);
-        $('#READ_BUTTON').addClass('w3-grey');
-        $('#UNREAD_BUTTON').removeClass('w3-grey');
-        $('#ALL_BUTTON').removeClass('w3-grey');
+      $('.CURRENT').addClass('READ');
+      $('.CURRENT').removeClass('CURRENT');
+      if (tabName == 'CONFIRM') {
+        $('.CONFIRM').show(200);
+        $('.UNCONFIRM').hide(200);
+        $('#CONFIRM_TAB').addClass('w3-grey');
+        $('#UNCONFIRM_TAB').removeClass('w3-grey');
+        $('#ALL_TAB').removeClass('w3-grey');
       }
-      if (tabName == 'UNREAD') {
-        $('.READ').hide(200);
-        $('.UNREAD').show(200);
-        $('#READ_BUTTON').removeClass('w3-grey');
-        $('#UNREAD_BUTTON').addClass('w3-grey');
-        $('#ALL_BUTTON').removeClass('w3-grey');
+      if (tabName == 'UNCONFIRM') {
+        $('.CONFIRM').hide(200);
+        $('.UNCONFIRM').show(200);
+        $('#CONFIRM_TAB').removeClass('w3-grey');
+        $('#UNCONFIRM_TAB').addClass('w3-grey');
+        $('#ALL_TAB').removeClass('w3-grey');
       }
       if (tabName == 'ALL') {
-        $('.READ').show(200);
-        $('.UNREAD').show(200);
-        $('#READ_BUTTON').removeClass('w3-grey');
-        $('#UNREAD_BUTTON').removeClass('w3-grey');
-        $('#ALL_BUTTON').addClass('w3-grey');
+        $('.CONFIRM').show(200);
+        $('.UNCONFIRM').show(200);
+        $('#CONFIRM_TAB').removeClass('w3-grey');
+        $('#UNCONFIRM_TAB').removeClass('w3-grey');
+        $('#ALL_TAB').addClass('w3-grey');
+      }
+      searchFilter();
+    }
+
+
+    function searchFilter() {
+      input = document.getElementById("mySearch");
+      filter = input.value.toUpperCase();
+      demo_tag = document.getElementById("Demo1");
+      div_tag = $('.ARTICLE_LIST')
+      for (var i = 0; i < div_tag.length; i++) {
+        console.log(div_tag[i].id);
+        //a = div_tag[i].getElementsByTagName("a")[0];
+        if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+          div_tag[i].style.display = "";
+        } else {
+          div_tag[i].style.display = "none";
+        }
       }
     }
 
     function actual_image_width(FILENAME) {
       var dimension, image;
       image = new Image();
-      image.src = "/database/" + FILENAME;
+      image.src = "/database/" + DATASET + "/" + FILENAME;
       image.onload = function () {
         dimension = {
           width: image.naturalWidth,
@@ -453,7 +498,6 @@
         success: function (result) {
           if (packet['ORDER'] == 'TARGET') {
             result = JSON.parse(result);
-            console.log(result);
             if (result['TMJ_LEFT'] == '') {
               TMJ_LEFT_BUTTON_CONTROL('NONE');
             } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
@@ -477,6 +521,7 @@
             }
             $('#TEXT_AREA').val(result['COMMENT_TEXT']);
             $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
+            console.log(result['CONFIRM_CHECK']);
             setTimeout(function () {
               annotator.clear_all();
               if (result['BBOX_LABEL'] == '') {
@@ -503,6 +548,7 @@
 
     function generatePacket(ORDER, PARAMETER, SETVALUE) {
       var parameter = {};
+      parameter['DATASET'] = DATASET;
       parameter['ORDER'] = ORDER;
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = PARAMETER;
@@ -522,6 +568,33 @@
     function SELECT_DATASET(DATASET_NAME) {
       window.location.href = "/viewer/" + DATASET_NAME;
     }
+
+    // Typewriting Function
+    var i = 0;
+    var speed = 50;
+    var start = false;
+    var elmnt = document.getElementById("CMD_WINDOW");
+    var down = 100;
+
+    function typeController(id, count, txt) {
+      if (count < txt.length) {
+        document.getElementById(id).innerHTML += txt.charAt(count);
+        count++;
+        setTimeout(typeController, speed, id, count, txt);
+        down += 10;
+        elmnt.scrollTop = down;
+      }
+    }
+
+    function commandLine(typing) {
+      var para = document.createElement("clx");
+      para.innerHTML = "<p id=CMD_WINDOW" + i + " style='margin:1px;'></p>";
+      document.getElementById("CMD_WINDOW").appendChild(para);
+      typeController("CMD_WINDOW" + i, 0, typing);
+      i++;
+    }
+
+    commandLine('Initialization for Dataset ' + DATASET + '.');
 
   </script>
 

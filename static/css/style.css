@@ -253,7 +253,7 @@ input:checked + .slider_switch:before {
   position:relative;display:inline-block;margin:4px;background-color:#4286f4;color:white;float:right;border:1px solid #000;text-decoration:none;padding:3px;
 }
 #Demo1{
-  display:inline-block;height:calc(100% - (100px + 170px));width:100%;overflow-y:scroll;border:0px solid red;
+  display:inline-block;height:calc(100% - (100px + 200px));width:100%;overflow-y:scroll;border:0px solid red;
 }
 
 ::-webkit-scrollbar-track
