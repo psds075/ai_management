@@ -45,7 +45,8 @@
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
           onclick="openImage('{{data['FILENAME']}}')" class="img_name">
           <div class="w3-container" style='padding:0px'>
-            <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}} style='height:65px;width:130px;'>
+            <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}}
+                style='height:65px;width:130px;'>
             </div>
             <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
               {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}</div>
@@ -55,7 +56,7 @@
       {% endfor %}
     </div>
     <div class=center>
-      <button class=below_btn onclick='alert("구현 예정입니다.");'>START TRAINING</button>
+      <button class=below_btn onclick="alert('향후 구현 예정입니다.');">START TRAINING</button>
       <button class=below_btn onclick="document.getElementById('id03').style.display='block'">ACCURACY RESULT</button>
     </div>
   </nav>
@@ -91,7 +92,7 @@
         </p>
         <br>
         <p>
-          <button class="w3-button w3-black">CONFORM</button>
+          <button class="w3-button w3-black">CONFIRM</button>
         </p>
       </div>
       <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
@@ -129,6 +130,9 @@
                 <div class="w3-grey">
                   <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
                 </div>
+              </div>
+              <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
+                style='text-align:left;border: 0px solid black;height:100px;overflow-y:scroll;'>
               </div>
               <br>
               <div id="right_box7" style='text-align:center'>
@@ -399,10 +403,11 @@
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).attr('class', 'CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
       sendToServer(parameter);
+      commandLine(FILENAME + ' is opened.');
     }
 
     function sendCompleteLabeling() {
-      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET' : DATASET };
+      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
       sendToServer(parameter);
       window.location.href = "/viewer";
     }
@@ -524,6 +529,33 @@
     function SELECT_DATASET(DATASET_NAME) {
       window.location.href = "/viewer/" + DATASET_NAME;
     }
+
+    // Typewriting Function
+    var i = 0;
+    var speed = 50;
+    var start = false;
+    var elmnt = document.getElementById("CMD_WINDOW");
+    var down = 100;
+
+    function typeController(id, count, txt) {
+      if (count < txt.length) {
+        document.getElementById(id).innerHTML += txt.charAt(count);
+        count++;
+        setTimeout(typeController, speed, id, count, txt);
+        down += 10;
+        elmnt.scrollTop = down;
+      }
+    }
+
+    function commandLine(typing) {
+      var para = document.createElement("clx");
+      para.innerHTML = "<p id=CMD_WINDOW" + i + " style='margin:1px;'></p>";
+      document.getElementById("CMD_WINDOW").appendChild(para);
+      typeController("CMD_WINDOW" + i, 0, typing);
+      i++;
+    }
+
+    commandLine('Initialization for Dataset ' + DATASET + '.');
 
   </script>
 
