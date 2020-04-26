@@ -13,7 +13,7 @@ DB_INFO = 'DB_INFO'
 BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
-DEBUG_MODE = True 
+DEBUG_MODE = False 
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK']
 
 
@@ -159,6 +159,6 @@ def database(path):
     return send_from_directory(BASE_DIR, path) 
 
 if __name__ == '__main__':
-    app.run(debug=True, host = '0.0.0.0', port = 80)
+    app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)
 
 
