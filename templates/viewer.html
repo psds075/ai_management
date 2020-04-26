@@ -240,6 +240,7 @@
     var FILENAME = '';
     var GUIDED_FILENAME = '';
     var DATASET = '{{current_dataset}}';
+    var TAB_STATUS = 'ALL';
 
     // IMAGE LABELER BLOCK
     var annotator;
@@ -440,6 +441,7 @@
         $('#CONFIRM_TAB').addClass('w3-grey');
         $('#UNCONFIRM_TAB').removeClass('w3-grey');
         $('#ALL_TAB').removeClass('w3-grey');
+        TAB_STATUS = 'CONFIRM';
       }
       if (tabName == 'UNCONFIRM') {
         $('.CONFIRM').hide(200);
@@ -447,6 +449,7 @@
         $('#CONFIRM_TAB').removeClass('w3-grey');
         $('#UNCONFIRM_TAB').addClass('w3-grey');
         $('#ALL_TAB').removeClass('w3-grey');
+        TAB_STATUS = 'UNCONFIRM';
       }
       if (tabName == 'ALL') {
         $('.CONFIRM').show(200);
@@ -454,6 +457,7 @@
         $('#CONFIRM_TAB').removeClass('w3-grey');
         $('#UNCONFIRM_TAB').removeClass('w3-grey');
         $('#ALL_TAB').addClass('w3-grey');
+        TAB_STATUS = 'ALL';
       }
       searchFilter();
     }
@@ -463,14 +467,35 @@
       input = document.getElementById("mySearch");
       filter = input.value.toUpperCase();
       demo_tag = document.getElementById("Demo1");
-      div_tag = $('.ARTICLE_LIST')
-      for (var i = 0; i < div_tag.length; i++) {
-        console.log(div_tag[i].id);
-        //a = div_tag[i].getElementsByTagName("a")[0];
-        if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
-          div_tag[i].style.display = "";
-        } else {
-          div_tag[i].style.display = "none";
+
+      if (TAB_STATUS == 'CONFIRM') {
+        div_tag = $('.CONFIRM')
+        for (var i = 0; i < div_tag.length; i++) {
+          if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+            div_tag[i].style.display = "";
+          } else {
+            div_tag[i].style.display = "none";
+          }
+        }
+      }
+      if (TAB_STATUS == 'UNCONFIRM') {
+        div_tag = $('.UNCONFIRM')
+        for (var i = 0; i < div_tag.length; i++) {
+          if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+            div_tag[i].style.display = "";
+          } else {
+            div_tag[i].style.display = "none";
+          }
+        }
+      }
+      if (TAB_STATUS == 'ALL') {
+        div_tag = $('.ARTICLE_LIST')
+        for (var i = 0; i < div_tag.length; i++) {
+          if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+            div_tag[i].style.display = "";
+          } else {
+            div_tag[i].style.display = "none";
+          }
         }
       }
     }
