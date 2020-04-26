@@ -44,16 +44,17 @@
     </div>
 
     <div class="w3-bar w3-black">
-      <button class="w3-button" id="UNREAD_BUTTON" onclick="openTab('UNREAD')">UNREAD</button>
-      <button class="w3-button" id="READ_BUTTON" onclick="openTab('READ')">READ</button>
-      <button class="w3-button w3-grey" id="ALL_BUTTON" onclick="openTab('ALL')">ALL</button>
+      <button class="w3-button" id="UNCONFIRM_TAB" onclick="openTab('UNCONFIRM')">UNCONFIRM</button>
+      <button class="w3-button" id="CONFIRM_TAB" onclick="openTab('CONFIRM')">CONFIRM</button>
+      <button class="w3-button w3-grey" id="ALL_TAB" onclick="openTab('ALL')">ALL</button>
     </div>
 
     <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
 
     <div id="Demo1" class="w3-animate-left">
       {% for data in datalist %}
-      <div class="{{data['REVIEW_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}" text="{{data['FILENAME']}}">
+      <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
+        text="{{data['FILENAME']}}">
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
           onclick="openImage('{{data['FILENAME']}}')" class="img_name">
           <div class="w3-container" style='padding:0px'>
@@ -78,7 +79,6 @@
     <div id="page1" class="w3-container person" style='margin-left:300px;'>
       <div id="main_img" style='display:none'>
         <div id="bbox_annotator" style="display:inline-block;"></div>
-        <!--img src="" id=img2 width=60%-->
       </div>
       <div id="unlabeled_img" style='display:none'>
         <img src="" id=img3 width=60%>
@@ -104,7 +104,7 @@
         </p>
         <br>
         <p>
-          <button class="w3-button w3-black">CONFIRM</button>
+          <button class="w3-button w3-black" id="CONFIRM_BUTTON">CONFIRM</button>
         </p>
       </div>
       <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
@@ -143,17 +143,17 @@
                   <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
                 </div>
               </div>
-              <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
-                style='text-align:left;border: 0px solid black;height:100px;overflow-y:scroll;'>
-              </div>
               <br>
               <div id="right_box7" style='text-align:center'>
                 <span id="comments">Comments</span>
                 <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
                   id="insert_btn">INSERT</a>
               </div>
-              <div id="comment_box">
+              <div id="comment_box" style="height:calc(100% - 530px);overflow-y:scroll;width:100%;">
                 <div id='COMMENT_TEXT' style="font-weight:lighter;"></div>
+              </div>
+              <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
+                style='text-align:left;border: 0px solid black;height:100px;overflow-y:scroll;'>
               </div>
             </div>
           </div>
@@ -279,6 +279,13 @@
       parameter['SETVALUE'] = $('#TEXT_AREA').val();
       $('#COMMENT_TEXT').html($('#TEXT_AREA').val());
       sendToServer(parameter);
+    });
+
+    $('#CONFIRM_BUTTON').click(function () {
+      $('#main_img').hide(200);
+      $('#main_input').hide(200);
+      commandLine(FILENAME + ' was confirmed.');
+      generatePacket('LABEL', 'CONFIRM_CHECK', 'CONFIRM');
     });
 
     var count = 0;
@@ -407,10 +414,10 @@
       $('#main_img').css("display", "");
       $('#main_img').css("width", DEVICEWIDTH + 'px');
       $('#main_input').css("display", "");
-      $('#img2').attr("src", "/database/" + DATASET + "/" + FILENAME);
       $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
       $('#img3').attr("width", (DEVICEWIDTH - 648) + "px");
-      $('.CURRENT').attr('class', 'READ');
+      $('.CURRENT').addClass('READ');
+      $('.CURRENT').removeClass('CURRENT');
       $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).attr('class', 'CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
@@ -425,37 +432,39 @@
     }
 
     function openTab(tabName) {
-      $('.CURRENT').attr('class', 'READ');
-      if (tabName == 'READ') {
-        $('.READ').show(200);
-        $('.UNREAD').hide(200);
-        $('#READ_BUTTON').addClass('w3-grey');
-        $('#UNREAD_BUTTON').removeClass('w3-grey');
-        $('#ALL_BUTTON').removeClass('w3-grey');
+      $('.CURRENT').addClass('READ');
+      $('.CURRENT').removeClass('CURRENT');
+      if (tabName == 'CONFIRM') {
+        $('.CONFIRM').show(200);
+        $('.UNCONFIRM').hide(200);
+        $('#CONFIRM_TAB').addClass('w3-grey');
+        $('#UNCONFIRM_TAB').removeClass('w3-grey');
+        $('#ALL_TAB').removeClass('w3-grey');
       }
-      if (tabName == 'UNREAD') {
-        $('.READ').hide(200);
-        $('.UNREAD').show(200);
-        $('#READ_BUTTON').removeClass('w3-grey');
-        $('#UNREAD_BUTTON').addClass('w3-grey');
-        $('#ALL_BUTTON').removeClass('w3-grey');
+      if (tabName == 'UNCONFIRM') {
+        $('.CONFIRM').hide(200);
+        $('.UNCONFIRM').show(200);
+        $('#CONFIRM_TAB').removeClass('w3-grey');
+        $('#UNCONFIRM_TAB').addClass('w3-grey');
+        $('#ALL_TAB').removeClass('w3-grey');
       }
       if (tabName == 'ALL') {
-        $('.READ').show(200);
-        $('.UNREAD').show(200);
-        $('#READ_BUTTON').removeClass('w3-grey');
-        $('#UNREAD_BUTTON').removeClass('w3-grey');
-        $('#ALL_BUTTON').addClass('w3-grey');
+        $('.CONFIRM').show(200);
+        $('.UNCONFIRM').show(200);
+        $('#CONFIRM_TAB').removeClass('w3-grey');
+        $('#UNCONFIRM_TAB').removeClass('w3-grey');
+        $('#ALL_TAB').addClass('w3-grey');
       }
       searchFilter();
     }
+
 
     function searchFilter() {
       input = document.getElementById("mySearch");
       filter = input.value.toUpperCase();
       demo_tag = document.getElementById("Demo1");
       div_tag = $('.ARTICLE_LIST')
-      for (var i = 0; i < div_tag.length; i ++){
+      for (var i = 0; i < div_tag.length; i++) {
         console.log(div_tag[i].id);
         //a = div_tag[i].getElementsByTagName("a")[0];
         if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
@@ -512,6 +521,7 @@
             }
             $('#TEXT_AREA').val(result['COMMENT_TEXT']);
             $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
+            console.log(result['CONFIRM_CHECK']);
             setTimeout(function () {
               annotator.clear_all();
               if (result['BBOX_LABEL'] == '') {

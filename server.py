@@ -14,7 +14,7 @@ BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
 DEBUG_MODE = True 
-TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL']
+TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK']
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -62,22 +62,23 @@ def viewer(DATASET_NAME):
                 check_column = True
                 df[column] = ''
         if(check_column == True):
-            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
             df = df.fillna('')
+            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
 
         datalist = []
         df = df.sort_values(by=["FILENAME"])
         for i in range(len(df)):
             if(df['REVIEW_CHECK'].iloc[i] == ''):
                 df['REVIEW_CHECK'].iloc[i] = 'UNREAD'
+            if(df['CONFIRM_CHECK'].iloc[i] == ''):
+                df['CONFIRM_CHECK'].iloc[i] = 'UNCONFIRM'
             data = {'FILENAME' : df['FILENAME'].iloc[i],
-                    'SEX' : str(df['SEX'].iloc[i]), 
-                    'AGE' : str(df['AGE'].iloc[i]), 
-                    'STATUS':'N/A',
-                    'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i])
+                    'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
+                    'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i])
                     }
             datalist.append(data)
-            
+        df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+
         datasetlist = []
         for DIR in os.listdir(BASE_DIR):
             if(os.path.isdir(BASE_DIR+DIR)):
@@ -94,15 +95,13 @@ def sending_data():
         datalist = []
         for i in range(len(df)):
             data = {'FILENAME' : df['FILENAME'].iloc[i], 
-                    'SEX' : df['SEX'].iloc[i], 
-                    'AGE' : str(df['AGE'].iloc[i]),
-                    'STATUS':str(df['STATUS'].iloc[i]),
                     'TMJ_LEFT':str(df['TMJ_LEFT'].iloc[i]), 
                     'TMJ_RIGHT':str(df['TMJ_RIGHT'].iloc[i]),
                     'OSTEOPOROSIS':str(df['OSTEOPOROSIS'].iloc[i]), 
                     'COMMENT_TEXT':str(df['COMMENT_TEXT'].iloc[i]),
                     'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
-                    'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i])
+                    'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i]),
+                    'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i])
                     }
             datalist.append(data)
         return json.dumps(datalist)
@@ -112,15 +111,13 @@ def sending_data():
         df = df.fillna('')
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
         data = {'FILENAME' : df['FILENAME'].iloc[i], 
-                'SEX' : df['SEX'].iloc[i], 
-                'AGE' : str(df['AGE'].iloc[i]),
-                'STATUS':str(df['STATUS'].iloc[i]),
                 'TMJ_LEFT':str(df['TMJ_LEFT'].iloc[i]), 
                 'TMJ_RIGHT':str(df['TMJ_RIGHT'].iloc[i]),
                 'OSTEOPOROSIS':str(df['OSTEOPOROSIS'].iloc[i]), 
                 'COMMENT_TEXT':str(df['COMMENT_TEXT'].iloc[i]),
                 'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
-                'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i])
+                'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i]),
+                'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i])
                 }
         df['REVIEW_CHECK'].iloc[i]='READ'
         df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
