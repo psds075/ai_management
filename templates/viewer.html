@@ -420,7 +420,7 @@
       $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('CURRENT');
       $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
-      $('#' + FILENAME.substring(0, FILENAME.length - 4)).attr('class', 'CURRENT');
+      $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
       sendToServer(parameter);
       commandLine(FILENAME + ' is opened.');
@@ -546,7 +546,6 @@
             }
             $('#TEXT_AREA').val(result['COMMENT_TEXT']);
             $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
-            console.log(result['CONFIRM_CHECK']);
             setTimeout(function () {
               annotator.clear_all();
               if (result['BBOX_LABEL'] == '') {
