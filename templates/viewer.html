@@ -33,7 +33,7 @@
     <div>
       <div class="w3-dropdown-click" style='width:50%'>
         <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">LOAD DATASET</button>
-        <div id="Demo" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity">
+        <div id="Demo" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity" style="overflow-y:scroll;height:400px;">
           {% for dataset in datasetlist %}
           <a href="#" class="w3-bar-item w3-button"
             onclick="SHOW_DATASET();SELECT_DATASET('{{dataset['DATASET_NAME']}}');">{{dataset['DATASET_NAME']}}</a>
@@ -595,7 +595,7 @@
 
     // Typewriting Function
     var i = 0;
-    var speed = 50;
+    var speed = 20;
     var start = false;
     var elmnt = document.getElementById("CMD_WINDOW");
     var down = 100;
