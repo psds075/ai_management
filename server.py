@@ -19,8 +19,7 @@ TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OST
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    filelist = os.listdir(os.path.join('static','px'))
-    return render_template('index.html',filelist=json.dumps(filelist))
+    return render_template('index.html')
 
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])

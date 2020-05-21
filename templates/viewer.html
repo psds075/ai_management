@@ -149,7 +149,7 @@
                 <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
                   id="insert_btn">INSERT</a>
               </div>
-              <div id="comment_box" style="height:calc(100% - 530px);overflow-y:scroll;width:100%;">
+              <div id="comment_box" style="height:calc(100% - 515px);overflow-y:scroll;width:100%;">
                 <div id='COMMENT_TEXT' style="font-weight:lighter;"></div>
               </div>
               <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
@@ -287,6 +287,10 @@
       $('#main_input').hide(200);
       commandLine(FILENAME + ' was confirmed.');
       generatePacket('LABEL', 'CONFIRM_CHECK', 'CONFIRM');
+      $('.CURRENT').addClass('CONFIRM');
+      $('.CURRENT').removeClass('UNCONFIRM');
+      $('.CURRENT').removeClass('CURRENT');
+      openTab(TAB_STATUS);
     });
 
     var count = 0;
