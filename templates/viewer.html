@@ -288,6 +288,7 @@
       commandLine(FILENAME + ' was confirmed.');
       generatePacket('LABEL', 'CONFIRM_CHECK', 'CONFIRM');
       $('.CURRENT').addClass('CONFIRM');
+      $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('UNCONFIRM');
       $('.CURRENT').removeClass('CURRENT');
       openTab(TAB_STATUS);
