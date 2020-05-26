@@ -3,9 +3,10 @@ from flask import Flask, render_template, jsonify, request, send_from_directory,
 import os
 import json
 import pandas as pd
+import collections
 
 app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False
+DEBUG_MODE = False 
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -14,9 +15,7 @@ DB_INFO = 'DB_INFO'
 BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
-DEBUG_MODE = False 
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK']
-
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -29,6 +28,8 @@ def viewer(DATASET_NAME):
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
 
+    LABEL_RANK = label_statistics()
+
     if DATASET_NAME == 'NONE':
         datalist = []
         datasetlist = []
@@ -38,7 +39,6 @@ def viewer(DATASET_NAME):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
     else:
         global DB_DIR
         global DB_NAME
@@ -90,7 +90,8 @@ def viewer(DATASET_NAME):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
+    
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), LABEL_RANK = LABEL_RANK)
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
@@ -161,6 +162,46 @@ def sending_data():
 @app.route('/database/<path:path>')
 def database(path):
     return send_from_directory(BASE_DIR, path) 
+
+def label_statistics():
+    # 디렉토리 불러오기
+    with open('env.json') as json_file:
+        data = json.load(json_file)
+        BASE_DIR = data['BASE_DIR']
+        
+    # 폴더명 확인
+    folderlist = []
+    for DB_NAME in os.listdir(BASE_DIR):
+        if(os.path.isdir(BASE_DIR+DB_NAME)):
+            if os.path.isfile(BASE_DIR+DB_NAME+'.xls'):
+                folderlist.append(DB_NAME)
+
+    if not os.path.isdir('train'):
+        os.mkdir('train')
+    if not os.path.isdir('test'):
+        os.mkdir('test')
+
+    LABEL_LIST = []
+
+    # 개수 카운팅
+    for DATASET_NAME in folderlist[:]:
+        df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
+        if 'BBOX_LABEL' in df:
+            for i in range(len(df)):
+                if (not df['BBOX_LABEL'].isnull().iloc[i]) and (df['CONFIRM_CHECK'].iloc[i] == 'CONFIRM'):
+                    BBOX_LABEL = json.loads(df['BBOX_LABEL'].iloc[i])
+                    for j in range(len(BBOX_LABEL)):
+                        class_name = str(BBOX_LABEL[j]['label'])
+                        LABEL_LIST.append(class_name)
+
+    LABEL_COUNTER = collections.Counter(LABEL_LIST)
+    LABEL_RANK = []
+
+    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], reverse = True):
+        #if(value > 50):
+        LABEL_RANK.append((key, value))
+    
+    return LABEL_RANK
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)
