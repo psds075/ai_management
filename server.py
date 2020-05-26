@@ -5,6 +5,7 @@ import json
 import pandas as pd
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -13,7 +14,7 @@ DB_INFO = 'DB_INFO'
 BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
-DEBUG_MODE = True 
+DEBUG_MODE = False 
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK']
 
 
@@ -24,6 +25,10 @@ def index():
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
+    with open('label_dict.json',encoding = 'utf-8') as json_file:
+        data = json.load(json_file)
+        LABEL_DICT = data['LABEL_DICT']
+
     if DATASET_NAME == 'NONE':
         datalist = []
         datasetlist = []
@@ -33,7 +38,7 @@ def viewer(DATASET_NAME):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME)
+        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
     else:
         global DB_DIR
         global DB_NAME
@@ -85,7 +90,7 @@ def viewer(DATASET_NAME):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME)
+        return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():

@@ -33,7 +33,8 @@
     <div>
       <div class="w3-dropdown-click" style='width:50%'>
         <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">LOAD DATASET</button>
-        <div id="Demo" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity" style="overflow-y:scroll;height:400px;">
+        <div id="Demo" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
+          style="overflow-y:scroll;height:400px;">
           {% for dataset in datasetlist %}
           <a href="#" class="w3-bar-item w3-button"
             onclick="SHOW_DATASET();SELECT_DATASET('{{dataset['DATASET_NAME']}}');">{{dataset['DATASET_NAME']}}</a>
@@ -230,6 +231,12 @@
   </div>
 
   <script>
+    var LABEL_DICT = {{LABEL_DICT|tojson}};
+    var LABEL_DICT = JSON.parse(LABEL_DICT);
+    //console.log(LABEL_DICT);
+  </script>
+
+  <script>
 
     var BODY = document.body, HTML = document.documentElement;
     var DEVICEHEIGHT = Math.max(BODY.scrollHeight, BODY.offsetHeight, HTML.clientHeight, HTML.scrollHeight, HTML.offsetHeight);
@@ -249,7 +256,7 @@
       annotator = new BBoxAnnotator({
         url: "../static/img/Z0001.jpg",
         input_method: "select",
-        labels: ["경동맥석회화", "정맥석", "편도석회화", "경상설골인대골화", "하악골설측함요", "하악관침범", "정중과잉치", "그냥과잉치", "방사선불투과성", "방사선투과성", "저류가성낭", "치근단골형성이상", "점막비후", "상악동혼탁상", "선천적치아결손", "타석", "매복치", "상악동석", "비구개관낭", "치아종", "방사선혼합상","골화석증","피부골종", "림프절석회화","쇼그렌증후군","치근파절"],
+        labels: LABEL_DICT,
         onchange: function (entries) {
           var parameter = {};
           parameter['DATASET'] = DATASET;
