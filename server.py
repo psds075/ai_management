@@ -41,6 +41,8 @@ def viewer(DATASET_NAME):
             if 'CONFIRM_CHECK' in df:
                 if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
                     datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+                elif(len(os.listdir(BASE_DIR+DIR)) != len(df)):
+                    datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
             else:
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
 
