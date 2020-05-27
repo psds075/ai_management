@@ -7,6 +7,7 @@ import requests
 import collections
 import cv2
 import base64
+import numpy as np
 
 app = Flask(__name__)
 DEBUG_MODE = False 
@@ -163,10 +164,11 @@ def sending_data():
 
     if(request.json['ORDER'] == 'PREDICTION'):
         target_image = os.path.join(BASE_DIR+DB_NAME,request.json['FILENAME'])
-        img = cv2.imread(target_image)
+        #img = cv2.imread(target_image)
+        img = hanimread(target_image)
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
-        response = requests.post('http://localhost:5001/api', json=mydata)
+        response = requests.post('http://dentibot.iptime.org:5001/api', json=mydata)
         print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
 
@@ -216,6 +218,14 @@ def label_statistics():
         LABEL_RANK.append((key, value))
     
     return LABEL_RANK
+
+
+def hanimread(filePath):
+    stream = open( filePath.encode("utf-8") , "rb")
+    bytes = bytearray(stream.read())
+    numpyArray = np.asarray(bytes, dtype=np.uint8)
+    return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
+
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)
