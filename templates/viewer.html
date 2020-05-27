@@ -42,8 +42,8 @@
   }
 
   /* Center the loader */
-  #loading_statistics{
-    position:relative;
+  #loading_statistics {
+    position: relative;
     left: 45%;
     top: 30%;
     z-index: 1;
@@ -127,7 +127,7 @@
     </div>
     <div class=center>
       <button class=below_btn onclick="alert('향후 구현 예정입니다.');">START TRAINING</button>
-      <button class=below_btn onclick="document.getElementById('id03').style.display='block';SUMMARY_BUTTON_CONTROL();">STATISTICS
+      <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
         SUMMARY</button>
     </div>
   </nav>
@@ -279,24 +279,26 @@
       </div>
       <div class="w3-panel" style="overflow-y:scroll;height:calc(100% - 110px);">
         <div id="loading_statistics" style='display:none'></div>
-        <h2>Precision Statistics</h2>
-        <table class="w3-table-all w3-hoverable">
-          <thead>
-            <tr class="w3-black">
-              <th class="w3-center">학습날짜</th>
-              <th class="w3-center">총 데이터 수</th>
-              <th class="w3-center">mAP Precision</th>
+        <div id="statistics_contents">
+          <h2>Precision Statistics</h2>
+          <table class="w3-table-all w3-hoverable">
+            <thead>
+              <tr class="w3-black">
+                <th class="w3-center">학습날짜</th>
+                <th class="w3-center">총 데이터 수</th>
+                <th class="w3-center">mAP Precision</th>
+              </tr>
+            </thead>
+            <tr>
+              <td class="w3-center">2020. 05. 26.</td>
+              <td class="w3-center">8000</td>
+              <td class="w3-center">80%</td>
             </tr>
-          </thead>
-          <tr>
-            <td class="w3-center">2020. 05. 26.</td>
-            <td class="w3-center">8000</td>
-            <td class="w3-center">80%</td>
-          </tr>
-        </table>
-        <h2>Label Statistics</h2>
-        <table id='statistics_table' class="w3-table-all w3-hoverable">
-        </table>
+          </table>
+          <h2>Label Statistics</h2>
+          <table id='statistics_table' class="w3-table-all w3-hoverable">
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -388,8 +390,11 @@
 
     var count = 0;
 
-    function SUMMARY_BUTTON_CONTROL(){
-      generatePacket('STATISTICS','', '');
+    function SUMMARY_BUTTON_CONTROL() {
+      document.getElementById('id03').style.display = 'block';
+      $('#loading_statistics').show(200);
+      $('#statistics_contents').hide(200);
+      generatePacket('STATISTICS', '', '');
     }
 
     function TMJ_LEFT_BUTTON_CONTROL(signal) {
@@ -689,10 +694,11 @@
             sendToServer(parameter);
           }
           if (packet['ORDER'] == 'STATISTICS') {
-            console.log(result);
+            $('#loading_statistics').hide(200);
+            $('#statistics_contents').show(200);
             $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
-            for(var i=0;i<result.length;i++){
-              $("#statistics_table").append('<tr><td class="w3-center">'+result[i][0]+'</td><td class="w3-center">'+result[i][1]+'</td></tr>');
+            for (var i = 0; i < result.length; i++) {
+              $("#statistics_table").append('<tr><td class="w3-center">' + result[i][0] + '</td><td class="w3-center">' + result[i][1] + '</td></tr>');
             }
           }
         }
@@ -746,7 +752,6 @@
       typeController("CMD_WINDOW" + i, 0, typing);
       i++;
     }
-
     commandLine('Initialization for Dataset ' + DATASET + '.');
 
   </script>

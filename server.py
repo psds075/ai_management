@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False 
+DEBUG_MODE = True 
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -219,13 +219,11 @@ def label_statistics():
     
     return LABEL_RANK
 
-
 def hanimread(filePath):
     stream = open( filePath.encode("utf-8") , "rb")
     bytes = bytearray(stream.read())
     numpyArray = np.asarray(bytes, dtype=np.uint8)
     return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
-
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)
