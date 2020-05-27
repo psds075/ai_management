@@ -31,18 +31,19 @@ def viewer(DATASET_NAME):
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
 
+    datasetlist = []
+    for DIR in os.listdir(BASE_DIR):
+        if(os.path.isdir(BASE_DIR+DIR)):
+            if not os.path.isfile(BASE_DIR+DIR+'.xls'):
+                df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
+                df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
+            df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
+            if 'CONFIRM_CHECK' in df:
+                if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
+                    datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+
     if DATASET_NAME == 'NONE':
         datalist = []
-        datasetlist = []
-        for DIR in os.listdir(BASE_DIR):
-            if(os.path.isdir(BASE_DIR+DIR)):
-                if not os.path.isfile(BASE_DIR+DIR+'.xls'):
-                    df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
-                    df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
-                df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
-                if 'CONFIRM_CHECK' in df:
-                    if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
-                        datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
 
     else:
         global DB_DIR
@@ -88,14 +89,6 @@ def viewer(DATASET_NAME):
             datalist.append(data)
         df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
 
-        datasetlist = []
-        for DIR in os.listdir(BASE_DIR):
-            if(os.path.isdir(BASE_DIR+DIR)):
-                if not os.path.isfile(BASE_DIR+DIR+'.xls'):
-                    df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
-                    df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
-                datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
-    
     return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
 
 @app.route("/_JSON", methods=['GET', 'POST'])
