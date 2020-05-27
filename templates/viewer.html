@@ -323,14 +323,13 @@
     var TAB_STATUS = 'ALL';
 
     // LOADING ICON
-    function loadingStart() {
+    function loadingStart(){
       $('#loading_icon').show(200);
       $('#main_img').hide(200);
       $('#main_input').hide(200);
-      setTimeout(showPage, 1000);
     }
 
-    function showPage() {
+    function showPage(){
       $('#loading_icon').hide(200);
       $('#main_img').show(200);
       $('#main_input').show(200);
@@ -691,6 +690,7 @@
             parameter['PARAMETER'] = 'BBOX_LABEL';
             parameter['SETVALUE'] = JSON.stringify(annotator.entries);
             parameter['RATIO'] = image_ratio;
+            showPage();
             sendToServer(parameter);
           }
           if (packet['ORDER'] == 'STATISTICS') {
