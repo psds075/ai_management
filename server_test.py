@@ -10,11 +10,18 @@ with open('env.json') as json_file:
     
 # 폴더명 확인
 folderlist = []
-for DB_NAME in os.listdir(BASE_DIR):
-    if(os.path.isdir(BASE_DIR+DB_NAME)):
-        if os.path.isfile(BASE_DIR+DB_NAME+'.xls'):
-            folderlist.append(DB_NAME)
+for DATASET_NAME in os.listdir(BASE_DIR):
+    if(os.path.isdir(BASE_DIR+DATASET_NAME)):
+        if os.path.isfile(BASE_DIR+DATASET_NAME+'.xls'):
+            df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
+            if 'CONFIRM_CHECK' in df:
+                if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
+                    folderlist.append(DATASET_NAME)
+                    print(DATASET_NAME)
+                else:
+                    print(DATASET_NAME)
 
+'''
 if not os.path.isdir('train'):
     os.mkdir('train')
 if not os.path.isdir('test'):
@@ -26,6 +33,9 @@ data_list = []
 # 개수 카운팅
 for DATASET_NAME in folderlist[:]:
     df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
+    print((df['CONFIRM_CHECK'] == 'CONFIRM').sum() == len(df))
+    
+    
     if 'BBOX_LABEL' in df:
         for i in range(len(df)):
             if (not df['BBOX_LABEL'].isnull().iloc[i]) and (df['CONFIRM_CHECK'].iloc[i] == 'CONFIRM'):
@@ -33,6 +43,7 @@ for DATASET_NAME in folderlist[:]:
                 for j in range(len(BBOX_LABEL)):
                     class_name = str(BBOX_LABEL[j]['label'])
                     LABEL_LIST.append(class_name)
+
 
 LABEL_COUNTER = collections.Counter(LABEL_LIST)
 LABEL_RANK = []
@@ -43,5 +54,4 @@ for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], revers
     LABEL_RANK.append((key, value))
     LABEL_SET.add(key)
 
-
-
+    '''

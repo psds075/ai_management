@@ -22,6 +22,62 @@
     padding: 5px;
     border: 1px solid #ddd;
   }
+
+  /* Center the loader */
+  #loading_icon {
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    z-index: 1;
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+    border: 30px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 30px solid #001f3f;
+    width: 300px;
+    height: 300px;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+  }
+
+  /* Center the loader */
+  #loading_statistics{
+    position:relative;
+    left: 45%;
+    top: 30%;
+    z-index: 1;
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+    border: 30px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 30px solid #001f3f;
+    width: 200px;
+    height: 200px;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+  }
+
+  @-webkit-keyframes spin {
+    0% {
+      -webkit-transform: rotate(0deg);
+    }
+
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
 </style>
 
 <body>
@@ -71,7 +127,7 @@
     </div>
     <div class=center>
       <button class=below_btn onclick="alert('향후 구현 예정입니다.');">START TRAINING</button>
-      <button class=below_btn onclick="document.getElementById('id03').style.display='block'">STATISTICS
+      <button class=below_btn onclick="document.getElementById('id03').style.display='block';SUMMARY_BUTTON_CONTROL();">STATISTICS
         SUMMARY</button>
     </div>
   </nav>
@@ -79,6 +135,7 @@
   <!-- Main Page -->
   <div class="w3-main" id="page">
     <div id="page1" class="w3-container person" style='margin-left:300px;'>
+      <div id="loading_icon" style='display:none'></div>
       <div id="main_img" style='display:none'>
         <div id="bbox_annotator" style="display:inline-block;"></div>
       </div>
@@ -115,8 +172,9 @@
           <div class="slidecontainer">
             <div id="right_box1" style='text-align:left'>
               <div id="right_box2">
-                <button id='labeled_button' class="w3-button w3-grey w3-hover-red w3-padding-small">LABEL ON</button>
-                <button id='normal_button' class="w3-button w3-grey w3-hover-black w3-padding-small">LABEL OFF</button>
+                <button id='PREDICTION_BUTTON'
+                  class="w3-button w3-red w3-hover-grey w3-padding-small">PREDICTION</button>
+                <button id='RESET_BUTTON' class="w3-button w3-blue w3-hover-grey w3-padding-small">RESET</button>
               </div>
               <div class=''>
                 <div id="right_box4">Brightness</div>
@@ -211,15 +269,16 @@
     </div>
   </div>
 
-  <!-- Modal ACCURACY SUMMARY -->
+  <!-- Modal STATISTICS SUMMARY -->
   <div id="id03" class="w3-modal" style="z-index:5">
-    <div class="w3-modal-content w3-animate-zoom">
+    <div class="w3-modal-content w3-animate-zoom" style="height:70%;">
       <div class="w3-container w3-padding w3-blue-grey">
         <span onclick="document.getElementById('id03').style.display='none'"
           class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
         <h2 class="w3-blue-grey">Statistics Summary</h2>
       </div>
-      <div class="w3-panel" style="overflow-y:scroll;height:600px;">
+      <div class="w3-panel" style="overflow-y:scroll;height:calc(100% - 110px);">
+        <div id="loading_statistics" style='display:none'></div>
         <h2>Precision Statistics</h2>
         <table class="w3-table-all w3-hoverable">
           <thead>
@@ -236,27 +295,8 @@
           </tr>
         </table>
         <h2>Label Statistics</h2>
-        <table class="w3-table-all w3-hoverable">
-          <thead>
-            <tr class="w3-black">
-              <th class="w3-center">LABEL 항목</th>
-              <th class="w3-center">LABEL 수</th>
-            </tr>
-          </thead>
-          {% for LABEL in LABEL_RANK %}
-          <tr>
-            <td class="w3-center">{{LABEL[0]}}</td>
-            <td class="w3-center">{{LABEL[1]}}</td>
-          </tr>
-          {% endfor %}
+        <table id='statistics_table' class="w3-table-all w3-hoverable">
         </table>
-        <div class="w3-section">
-          <a class="w3-button w3-light-grey w3-right w3-margin-bottom"
-            onclick="document.getElementById('id03').style.display='none'">
-            Confirm
-            <i class="fa fa-paper-plane"></i>
-          </a>
-        </div>
       </div>
     </div>
   </div>
@@ -280,6 +320,20 @@
     var DATASET = '{{current_dataset}}';
     var TAB_STATUS = 'ALL';
 
+    // LOADING ICON
+    function loadingStart() {
+      $('#loading_icon').show(200);
+      $('#main_img').hide(200);
+      $('#main_input').hide(200);
+      setTimeout(showPage, 3000);
+    }
+
+    function showPage() {
+      $('#loading_icon').hide(200);
+      $('#main_img').show(200);
+      $('#main_input').show(200);
+    }
+
     // IMAGE LABELER BLOCK
     var annotator;
     var annotator_stop;
@@ -289,14 +343,14 @@
         input_method: "select",
         labels: LABEL_DICT,
         onchange: function (entries) {
-          var parameter = {};
-          parameter['DATASET'] = DATASET;
-          parameter['ORDER'] = 'LABEL';
-          parameter['FILENAME'] = FILENAME;
-          parameter['PARAMETER'] = 'BBOX_LABEL';
-          parameter['SETVALUE'] = JSON.stringify(entries);
-          parameter['RATIO'] = image_ratio;
           if (annotator_stop == false) {
+            var parameter = {};
+            parameter['DATASET'] = DATASET;
+            parameter['ORDER'] = 'LABEL';
+            parameter['FILENAME'] = FILENAME;
+            parameter['PARAMETER'] = 'BBOX_LABEL';
+            parameter['SETVALUE'] = JSON.stringify(entries);
+            parameter['RATIO'] = image_ratio;
             sendToServer(parameter);
           }
         },
@@ -333,6 +387,10 @@
     });
 
     var count = 0;
+
+    function SUMMARY_BUTTON_CONTROL(){
+      generatePacket('STATISTICS','', '');
+    }
 
     function TMJ_LEFT_BUTTON_CONTROL(signal) {
       if (signal == 'NORMAL') {
@@ -424,12 +482,13 @@
         generatePacket('LABEL', 'OSTEOPOROSIS', 1);
       });
 
-      //LABELING SWITCH
-      $('#normal_button').click(function () {
-        LABEL_ONOFF_CONTROL('OFF');
+      //PREDICTION RESET BUTTON
+      $('#PREDICTION_BUTTON').click(function () {
+        loadingStart();
+        generatePacket('PREDICTION', '', '');
       });
-      $('#labeled_button').click(function () {
-        LABEL_ONOFF_CONTROL('ON');
+      $('#RESET_BUTTON').click(function () {
+        annotator.clear_all();
       });
 
       //BRIGHTNESS CONTROL
@@ -504,7 +563,6 @@
       }
       searchFilter();
     }
-
 
     function searchFilter() {
       input = document.getElementById("mySearch");
@@ -608,6 +666,34 @@
               annotator_stop = false;
               LABEL_ONOFF_CONTROL('ON');
             }, 100);
+          }
+          if (packet['ORDER'] == 'PREDICTION') {
+            annotator.clear_all();
+            result.forEach(function (each_label) {
+              var rect = {
+                left: each_label.left * image_ratio,
+                top: each_label.top * image_ratio,
+                width: each_label.width * image_ratio,
+                height: each_label.height * image_ratio
+              };
+              rect.label = each_label.label;
+              annotator.add_entry(rect);
+            });
+            var parameter = {};
+            parameter['DATASET'] = DATASET;
+            parameter['ORDER'] = 'LABEL';
+            parameter['FILENAME'] = FILENAME;
+            parameter['PARAMETER'] = 'BBOX_LABEL';
+            parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+            parameter['RATIO'] = image_ratio;
+            sendToServer(parameter);
+          }
+          if (packet['ORDER'] == 'STATISTICS') {
+            console.log(result);
+            $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
+            for(var i=0;i<result.length;i++){
+              $("#statistics_table").append('<tr><td class="w3-center">'+result[i][0]+'</td><td class="w3-center">'+result[i][1]+'</td></tr>');
+            }
           }
         }
       });

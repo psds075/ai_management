@@ -3,10 +3,13 @@ from flask import Flask, render_template, jsonify, request, send_from_directory,
 import os
 import json
 import pandas as pd
+import requests
 import collections
+import cv2
+import base64
 
 app = Flask(__name__)
-DEBUG_MODE = False 
+DEBUG_MODE = True 
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -28,8 +31,6 @@ def viewer(DATASET_NAME):
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
 
-    LABEL_RANK = label_statistics()
-
     if DATASET_NAME == 'NONE':
         datalist = []
         datasetlist = []
@@ -38,7 +39,11 @@ def viewer(DATASET_NAME):
                 if not os.path.isfile(BASE_DIR+DIR+'.xls'):
                     df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
-                datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+                df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
+                if 'CONFIRM_CHECK' in df:
+                    if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
+                        datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+
     else:
         global DB_DIR
         global DB_NAME
@@ -91,7 +96,7 @@ def viewer(DATASET_NAME):
                     df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
                 datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
     
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), LABEL_RANK = LABEL_RANK)
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
@@ -159,6 +164,19 @@ def sending_data():
         df.to_excel(BASE_DIR+DB_INFO+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
         return json.dumps('Success')
 
+    if(request.json['ORDER'] == 'PREDICTION'):
+        target_image = os.path.join(BASE_DIR+DB_NAME,request.json['FILENAME'])
+        img = cv2.imread(target_image)
+        data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
+        mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
+        response = requests.post('http://localhost:5001/api', json=mydata)
+        print(json.loads(response.text)['message'])
+        return json.dumps(json.loads(response.text)['message'])
+
+    if(request.json['ORDER'] == 'STATISTICS'):
+        LABEL_RANK = label_statistics()
+        return json.dumps(LABEL_RANK)
+
 @app.route('/database/<path:path>')
 def database(path):
     return send_from_directory(BASE_DIR, path) 
@@ -198,7 +216,6 @@ def label_statistics():
     LABEL_RANK = []
 
     for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], reverse = True):
-        #if(value > 50):
         LABEL_RANK.append((key, value))
     
     return LABEL_RANK
