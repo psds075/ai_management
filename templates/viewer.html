@@ -83,17 +83,27 @@
 <body>
   <!-- Side Navigation -->
   <nav class="w3-sidebar w3-bar-block w3-collapse w3-animate-left w3-card" id="mySidebar">
-    <a href="javascript:void(0)" class="w3-bar-item w3-button w3-large" id="mySidebar2">
+    <a href="/viewer" class="w3-bar-item w3-button w3-large" id="mySidebar2">
       <img src="../static/src/AI MANAGEMENT LOGO.png" width=100%>
     </a>
     <div>
-      <div class="w3-dropdown-click" style='width:50%'>
-        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">LOAD DATASET</button>
-        <div id="Demo" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
+      <div class="w3-dropdown-click" style='width:33%'>
+        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">DATASET</button>
+        <div id="DATASET_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
           style="overflow-y:scroll;height:400px;">
           {% for dataset in datasetlist %}
           <a href="#" class="w3-bar-item w3-button"
             onclick="SHOW_DATASET();SELECT_DATASET('{{dataset['DATASET_NAME']}}');">{{dataset['DATASET_NAME']}}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="w3-dropdown-click" style='width:33%'>
+        <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">ARCHIVE</button>
+        <div id="ARCHIVE_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
+          style="overflow-y:scroll;height:400px;">
+          {% for archive in archivelist %}
+          <a href="#" class="w3-bar-item w3-button"
+            onclick="SHOW_ARCHIVE();SELECT_ARCHIVE('{{archive['DATASET_NAME']}}');">{{archive['DATASET_NAME']}}</a>
           {% endfor %}
         </div>
       </div>
@@ -163,7 +173,7 @@
         </p>
         <br>
         <p>
-          <button class="w3-button w3-black" id="CONFIRM_BUTTON">CONFIRM</button>
+          <button class="w3-button w3-grey w3-hover-black" id="CONFIRM_BUTTON">CONFIRM</button>
         </p>
       </div>
       <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
@@ -173,7 +183,7 @@
             <div id="right_box1" style='text-align:left'>
               <div id="right_box2">
                 <button id='PREDICTION_BUTTON'
-                  class="w3-button w3-red w3-hover-grey w3-padding-small">PREDICTION</button>
+                  class="w3-button w3-grey w3-hover-grey w3-padding-small">PREDICTION</button>
                 <button id='RESET_BUTTON' class="w3-button w3-blue w3-hover-grey w3-padding-small">RESET</button>
               </div>
               <div class=''>
@@ -209,11 +219,11 @@
                 <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
                   id="insert_btn">INSERT</a>
               </div>
-              <div id="comment_box" style="height:calc(100% - 515px);overflow-y:scroll;width:100%;">
+              <div id="comment_box" style="height:calc(100% - 500px);overflow-y:scroll;width:100%;">
                 <div id='COMMENT_TEXT' style="font-weight:lighter;"></div>
               </div>
               <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
-                style='text-align:left;border: 0px solid black;height:100px;overflow-y:scroll;'>
+                style='text-align:left;border: 0px solid black;margin:0px;height:100px;overflow-y:scroll;'>
               </div>
             </div>
           </div>
@@ -306,7 +316,6 @@
   <script>
     var LABEL_DICT = {{ LABEL_DICT| tojson}};
     var LABEL_DICT = JSON.parse(LABEL_DICT);
-    //console.log(LABEL_DICT);
   </script>
 
   <script>
@@ -323,13 +332,13 @@
     var TAB_STATUS = 'ALL';
 
     // LOADING ICON
-    function loadingStart(){
+    function loadingStart() {
       $('#loading_icon').show(200);
       $('#main_img').hide(200);
       $('#main_input').hide(200);
     }
 
-    function showPage(){
+    function showPage() {
       $('#loading_icon').hide(200);
       $('#main_img').show(200);
       $('#main_input').show(200);
@@ -353,6 +362,10 @@
             parameter['SETVALUE'] = JSON.stringify(entries);
             parameter['RATIO'] = image_ratio;
             sendToServer(parameter);
+            $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+            setTimeout(function () {
+              generatePacket('LABEL', 'PREDICTION_CHECK', 'NO_PREDICT');
+            }, 300);
           }
         },
         width: DEVICEWIDTH - 650,
@@ -378,13 +391,16 @@
     $('#CONFIRM_BUTTON').click(function () {
       $('#main_img').hide(200);
       $('#main_input').hide(200);
-      commandLine(FILENAME + ' was confirmed.');
+      commandLine(FILENAME + ' COMFIRM');
       generatePacket('LABEL', 'CONFIRM_CHECK', 'CONFIRM');
       $('.CURRENT').addClass('CONFIRM');
       $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('UNCONFIRM');
       $('.CURRENT').removeClass('CURRENT');
       openTab(TAB_STATUS);
+      if ($('.UNCONFIRM').length != 0) {
+        openImage($('.UNCONFIRM')[0].id + '.jpg');
+      }
     });
 
     var count = 0;
@@ -489,10 +505,24 @@
       //PREDICTION RESET BUTTON
       $('#PREDICTION_BUTTON').click(function () {
         loadingStart();
+        $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
         generatePacket('PREDICTION', '', '');
       });
       $('#RESET_BUTTON').click(function () {
         annotator.clear_all();
+        $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        var parameter = {};
+        parameter['DATASET'] = DATASET;
+        parameter['ORDER'] = 'LABEL';
+        parameter['FILENAME'] = FILENAME;
+        parameter['PARAMETER'] = 'BBOX_LABEL';
+        parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+        parameter['RATIO'] = image_ratio;
+        sendToServer(parameter);
+        setTimeout(function () {
+          generatePacket('LABEL', 'PREDICTION_CHECK', 'NO_PREDICT');
+        }, 300);
+
       });
 
       //BRIGHTNESS CONTROL
@@ -507,9 +537,11 @@
         TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
       });
 
-      // SET INITIAL BRIGHTNESS
+      // SET INITIAL BRIGHTNESS CONTRAST
       $('#brightness input').val(50);
       $('#brightness input').trigger("mouseover");
+      $('#contrast input').val(50);
+      $('#contrast input').trigger("mouseover");
     }
 
     BUTTON_CONROL();
@@ -518,9 +550,7 @@
       FILENAME = FILENAME_CURRENT;
       actual_image_width(FILENAME);
       annotator_stop = true;
-      $('#main_img').css("display", "");
       $('#main_img').css("width", DEVICEWIDTH + 'px');
-      $('#main_input').css("display", "");
       $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
       $('#img3').attr("width", (DEVICEWIDTH - 648) + "px");
       $('.CURRENT').addClass('READ');
@@ -528,8 +558,14 @@
       $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
+      var img = $('#brightness img');
+      $('#brightness input').val(50);
+      $('#contrast input').val(50);
+      TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + 100 + '%' + ')' });
+      TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + 100 + '%' + ')' });
+      loadingStart();
       sendToServer(parameter);
-      commandLine(FILENAME + ' is opened.');
+      commandLine(FILENAME + ' OPEN');
     }
 
     function sendCompleteLabeling() {
@@ -628,50 +664,68 @@
         success: function (result) {
           if (packet['ORDER'] == 'TARGET') {
             result = JSON.parse(result);
-            if (result['TMJ_LEFT'] == '') {
-              TMJ_LEFT_BUTTON_CONTROL('NONE');
-            } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
-              TMJ_LEFT_BUTTON_CONTROL('ABNORMAL');
+            if (result['REVIEW_CHECK'] == 'UNREAD') {
+              generatePacket('PREDICTION', '', '');
             } else {
-              TMJ_LEFT_BUTTON_CONTROL('NORMAL');
-            }
-            if (result['TMJ_RIGHT'] == '') {
-              TMJ_RIGHT_BUTTON_CONTROL('NONE');
-            } else if (parseInt(result['TMJ_RIGHT']) > 0.5) {
-              TMJ_RIGHT_BUTTON_CONTROL('ABNORMAL');
-            } else {
-              TMJ_RIGHT_BUTTON_CONTROL('NORMAL');
-            }
-            if (result['OSTEOPOROSIS'] == '') {
-              OSTEOPOROSIS_BUTTON_CONTROL('NONE');
-            } else if (parseInt(result['OSTEOPOROSIS']) > 0.5) {
-              OSTEOPOROSIS_BUTTON_CONTROL('ABNORMAL');
-            } else {
-              OSTEOPOROSIS_BUTTON_CONTROL('NORMAL');
-            }
-            $('#TEXT_AREA').val(result['COMMENT_TEXT']);
-            $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
-            setTimeout(function () {
-              annotator.clear_all();
-              if (result['BBOX_LABEL'] == '') {
-                result['BBOX_LABEL'] = '[]';
+              if (result['PREDICTION_CHECK'] == 'PREDICT') {
+                $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
               }
-              var labels = JSON.parse(result['BBOX_LABEL']);
-              labels.forEach(function (each_label) {
-                var rect = {
-                  left: each_label.left * image_ratio,
-                  top: each_label.top * image_ratio,
-                  width: each_label.width * image_ratio,
-                  height: each_label.height * image_ratio
-                };
-                rect.label = each_label.label;
-                annotator.add_entry(rect);
-              });
-              annotator_stop = false;
-              LABEL_ONOFF_CONTROL('ON');
-            }, 100);
+              else {
+                $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+              }
+              if (result['TMJ_LEFT'] == '') {
+                TMJ_LEFT_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
+                TMJ_LEFT_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                TMJ_LEFT_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['TMJ_RIGHT'] == '') {
+                TMJ_RIGHT_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['TMJ_RIGHT']) > 0.5) {
+                TMJ_RIGHT_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                TMJ_RIGHT_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['OSTEOPOROSIS'] == '') {
+                OSTEOPOROSIS_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['OSTEOPOROSIS']) > 0.5) {
+                OSTEOPOROSIS_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                OSTEOPOROSIS_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['CONFIRM_CHECK'] == 'CONFIRM') {
+                $('#CONFIRM_BUTTON').attr("class", "w3-button w3-black w3-hover-black");
+              } else {
+                $('#CONFIRM_BUTTON').attr("class", "w3-button w3-grey w3-hover-black");
+              }
+              $('#TEXT_AREA').val(result['COMMENT_TEXT']);
+              $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
+              setTimeout(function () {
+                annotator_stop = true;
+                annotator.clear_all();
+                if (result['BBOX_LABEL'] == '') {
+                  result['BBOX_LABEL'] = '[]';
+                }
+                var labels = JSON.parse(result['BBOX_LABEL']);
+                labels.forEach(function (each_label) {
+                  var rect = {
+                    left: each_label.left * image_ratio,
+                    top: each_label.top * image_ratio,
+                    width: each_label.width * image_ratio,
+                    height: each_label.height * image_ratio
+                  };
+                  rect.label = each_label.label;
+                  annotator.add_entry(rect);
+                });
+                annotator_stop = false;
+                LABEL_ONOFF_CONTROL('ON');
+                showPage();
+              }, 100);
+            }
           }
           if (packet['ORDER'] == 'PREDICTION') {
+            annotator_stop = true;
             annotator.clear_all();
             result.forEach(function (each_label) {
               var rect = {
@@ -683,6 +737,8 @@
               rect.label = each_label.label;
               annotator.add_entry(rect);
             });
+            annotator_stop = false;
+            showPage();
             var parameter = {};
             parameter['DATASET'] = DATASET;
             parameter['ORDER'] = 'LABEL';
@@ -690,8 +746,11 @@
             parameter['PARAMETER'] = 'BBOX_LABEL';
             parameter['SETVALUE'] = JSON.stringify(annotator.entries);
             parameter['RATIO'] = image_ratio;
-            showPage();
             sendToServer(parameter);
+            $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+            setTimeout(function () {
+              generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
+            }, 300);
           }
           if (packet['ORDER'] == 'STATISTICS') {
             $('#loading_statistics').hide(200);
@@ -716,15 +775,36 @@
     }
 
     function SHOW_DATASET() {
-      var x = document.getElementById("Demo");
+      var x = document.getElementById("DATASET_MENU");
+      var y = document.getElementById("ARCHIVE_MENU");
       if (x.className.indexOf("w3-show") == -1) {
         x.className += " w3-show";
       } else {
         x.className = x.className.replace(" w3-show", "");
       }
+      if (y.className.indexOf("w3-show")) {
+        y.className = y.className.replace(" w3-show", "");
+      }
     }
 
     function SELECT_DATASET(DATASET_NAME) {
+      window.location.href = "/viewer/" + DATASET_NAME;
+    }
+
+    function SHOW_ARCHIVE() {
+      var x = document.getElementById("ARCHIVE_MENU");
+      var y = document.getElementById("DATASET_MENU");
+      if (x.className.indexOf("w3-show") == -1) {
+        x.className += " w3-show";
+      } else {
+        x.className = x.className.replace(" w3-show", "");
+      }
+      if (y.className.indexOf("w3-show")) {
+        y.className = y.className.replace(" w3-show", "");
+      }
+    }
+
+    function SELECT_ARCHIVE(DATASET_NAME) {
       window.location.href = "/viewer/" + DATASET_NAME;
     }
 
@@ -752,7 +832,7 @@
       typeController("CMD_WINDOW" + i, 0, typing);
       i++;
     }
-    commandLine('Initialization for Dataset ' + DATASET + '.');
+    commandLine(DATASET + ' OPEN');
 
   </script>
 

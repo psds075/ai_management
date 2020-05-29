@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False 
+DEBUG_MODE = True 
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -19,7 +19,7 @@ DB_INFO = 'DB_INFO'
 BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
-TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK']
+TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK']
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -33,6 +33,7 @@ def viewer(DATASET_NAME):
         LABEL_DICT = data['LABEL_DICT']
 
     datasetlist = []
+    archivelist = []
     for DIR in os.listdir(BASE_DIR):
         if(os.path.isdir(BASE_DIR+DIR)):
             if not os.path.isfile(BASE_DIR+DIR+'.xls'):
@@ -41,11 +42,13 @@ def viewer(DATASET_NAME):
             df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
             if 'CONFIRM_CHECK' in df:
                 if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
-                    datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+                    datasetlist.append({'DATASET_NAME' : DIR})
                 elif(len(os.listdir(BASE_DIR+DIR)) != len(df)):
-                    datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+                    datasetlist.append({'DATASET_NAME' : DIR})
+                else:
+                    archivelist.append({'DATASET_NAME' : DIR})
             else:
-                datasetlist.append({'DATASET_STATUS' : '','DATASET_NAME' : DIR})
+                datasetlist.append({'DATASET_NAME' : DIR})
 
     if DATASET_NAME == 'NONE':
         datalist = []
@@ -94,7 +97,7 @@ def viewer(DATASET_NAME):
             datalist.append(data)
         df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
 
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
@@ -103,13 +106,8 @@ def sending_data():
         datalist = []
         for i in range(len(df)):
             data = {'FILENAME' : df['FILENAME'].iloc[i], 
-                    'TMJ_LEFT':str(df['TMJ_LEFT'].iloc[i]), 
-                    'TMJ_RIGHT':str(df['TMJ_RIGHT'].iloc[i]),
-                    'OSTEOPOROSIS':str(df['OSTEOPOROSIS'].iloc[i]), 
-                    'COMMENT_TEXT':str(df['COMMENT_TEXT'].iloc[i]),
                     'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
-                    'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i]),
-                    'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i])
+                    'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i]),
                     }
             datalist.append(data)
         return json.dumps(datalist)
@@ -125,7 +123,8 @@ def sending_data():
                 'COMMENT_TEXT':str(df['COMMENT_TEXT'].iloc[i]),
                 'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
                 'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i]),
-                'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i])
+                'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i]),
+                'PREDICTION_CHECK':str(df['PREDICTION_CHECK'].iloc[i])
                 }
         df['REVIEW_CHECK'].iloc[i]='READ'
         df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
