@@ -39,17 +39,19 @@ def viewer(DATASET_NAME):
             if not os.path.isfile(BASE_DIR+DIR+'.xls'):
                 df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
                 df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
-            df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
-            if 'CONFIRM_CHECK' in df:
-                if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
-                    datasetlist.append({'DATASET_NAME' : DIR})
-                elif(len(os.listdir(BASE_DIR+DIR)) != len(df)):
-                    datasetlist.append({'DATASET_NAME' : DIR})
+            try:
+                df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
+                if 'CONFIRM_CHECK' in df:
+                    if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
+                        datasetlist.append({'DATASET_NAME' : DIR})
+                    elif(len(os.listdir(BASE_DIR+DIR)) != len(df)):
+                        datasetlist.append({'DATASET_NAME' : DIR})
+                    else:
+                        archivelist.append({'DATASET_NAME' : DIR})
                 else:
-                    archivelist.append({'DATASET_NAME' : DIR})
-            else:
-                datasetlist.append({'DATASET_NAME' : DIR})
-
+                    datasetlist.append({'DATASET_NAME' : DIR})
+            except:
+                print('exception occured.')
     if DATASET_NAME == 'NONE':
         datalist = []
 
