@@ -402,7 +402,9 @@
       if (TAB_STATUS == 'UNCONFIRM') {
         console.log('test');
         if ($('.UNCONFIRM').length != 0) {
-          openImage($('.UNCONFIRM')[0].id + '.jpg');
+          setTimeout(function () {
+            openImage($('.UNCONFIRM')[0].id + '.jpg');
+          }, 300);
         }
       }
     });
@@ -561,7 +563,7 @@
       $('.CURRENT').removeClass('CURRENT');
       $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
-      var parameter = { 'ORDER': 'TARGET', 'FILENAME': FILENAME };
+      var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
       var img = $('#brightness img');
       $('#brightness input').val(50);
       $('#contrast input').val(50);
@@ -666,6 +668,7 @@
         data: JSON.stringify(packet),
         type: 'POST',
         success: function (result) {
+          console.log(packet);
           if (packet['ORDER'] == 'TARGET') {
             result = JSON.parse(result);
             if (result['REVIEW_CHECK'] == 'UNREAD') {

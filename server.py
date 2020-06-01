@@ -10,12 +10,11 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False 
+DEBUG_MODE = False
 
 with open('env.json') as json_file:
     data = json.load(json_file)
 
-DB_INFO = 'DB_INFO'
 BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
@@ -104,7 +103,7 @@ def viewer(DATASET_NAME):
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
     if(request.json['ORDER'] == 'LIST'):
-        df = pd.read_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', na_rep='')
+        df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', na_rep='')
         datalist = []
         for i in range(len(df)):
             data = {'FILENAME' : df['FILENAME'].iloc[i], 
@@ -115,7 +114,7 @@ def sending_data():
         return json.dumps(datalist)
 
     if(request.json['ORDER'] == 'TARGET'):
-        df = pd.read_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1')
+        df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1')
         df = df.fillna('')
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
         data = {'FILENAME' : df['FILENAME'].iloc[i], 
@@ -129,16 +128,15 @@ def sending_data():
                 'PREDICTION_CHECK':str(df['PREDICTION_CHECK'].iloc[i])
                 }
         df['REVIEW_CHECK'].iloc[i]='READ'
-        df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
-        if(DEBUG_MODE == True):
-            pass
-            #print(data)
+        df.to_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
         return json.dumps(json.dumps(data))
 
     if(request.json['ORDER'] == 'LABEL'):
-
-        df = pd.read_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', na_rep='')
+        df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', na_rep='')
+        if(DEBUG_MODE == True):
+            print(df)
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
+        print(request.json['PARAMETER'],str(request.json['SETVALUE']))
         df[request.json['PARAMETER']].iloc[i]=str(request.json['SETVALUE'])
         if(request.json['PARAMETER'] == 'BBOX_LABEL'):
             BBOX_LABEL = json.loads(df[request.json['PARAMETER']].iloc[i])
@@ -147,26 +145,16 @@ def sending_data():
                 EACH_LABEL['top'] = int(EACH_LABEL['top'] / request.json['RATIO'])
                 EACH_LABEL['width'] = int(EACH_LABEL['width'] / request.json['RATIO'])
                 EACH_LABEL['height'] = int(EACH_LABEL['height'] / request.json['RATIO'])
-                print(EACH_LABEL)
             df[request.json['PARAMETER']].iloc[i] = json.dumps(BBOX_LABEL)
         if(DEBUG_MODE == True):
             print(df)
             pass
-        df.to_excel(BASE_DIR+DB_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
-        return json.dumps('Success')
-
-    if(request.json['ORDER'] == 'DB_INFO'):
-        df = pd.read_excel(BASE_DIR+DB_INFO+'.xls', sheet_name='Sheet1', na_rep='')
-        df = df.fillna('')
-        i = df.index[df['DATASET_NAME'] == DB_NAME].tolist()[0]
-        df['DATASET_STATUS'].iloc[i] = 'COMPLETE'
-        df.to_excel(BASE_DIR+DB_INFO+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+        df.to_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
         return json.dumps('Success')
 
     if(request.json['ORDER'] == 'PREDICTION'):
-        target_image = os.path.join(BASE_DIR+DB_NAME,request.json['FILENAME'])
-        #img = cv2.imread(target_image)
-        img = hanimread(target_image)
+        target_image = os.path.join(BASE_DIR+request.json['DATASET'],request.json['FILENAME'])
+        img = hanimread(target_image) #img = cv2.imread(target_image) 대체
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
         response = requests.post('http://dentibot.iptime.org:5001/api', json=mydata)
