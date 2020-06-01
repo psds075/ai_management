@@ -398,9 +398,8 @@
       $('.CURRENT').removeClass('UNCONFIRM');
       $('.CURRENT').removeClass('CURRENT');
       openTab(TAB_STATUS);
-      console.log(TAB_STATUS);
+      //console.log(TAB_STATUS);
       if (TAB_STATUS == 'UNCONFIRM') {
-        console.log('test');
         if ($('.UNCONFIRM').length != 0) {
           setTimeout(function () {
             openImage($('.UNCONFIRM')[0].id + '.jpg');
@@ -668,7 +667,7 @@
         data: JSON.stringify(packet),
         type: 'POST',
         success: function (result) {
-          console.log(packet);
+          //console.log(packet);
           if (packet['ORDER'] == 'TARGET') {
             result = JSON.parse(result);
             if (result['REVIEW_CHECK'] == 'UNREAD') {
