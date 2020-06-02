@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 with open('env.json') as json_file:
     data = json.load(json_file)
