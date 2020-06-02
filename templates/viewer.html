@@ -735,10 +735,10 @@
             annotator.clear_all();
             result.forEach(function (each_label) {
               var rect = {
-                left: each_label.left * image_ratio,
-                top: each_label.top * image_ratio,
-                width: each_label.width * image_ratio,
-                height: each_label.height * image_ratio
+                left: parseInt(each_label.left * image_ratio),
+                top: parseInt(each_label.top * image_ratio),
+                width: parseInt(each_label.width * image_ratio),
+                height: parseInt(each_label.height * image_ratio)
               };
               rect.label = each_label.label;
               annotator.add_entry(rect);

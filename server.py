@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -157,7 +157,7 @@ def sending_data():
         img = hanimread(target_image) #img = cv2.imread(target_image) 대체
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
-        response = requests.post('http://dentibot.iptime.org:5001/api', json=mydata)
+        response = requests.post('http://psds075.iptime.org:5001/api', json=mydata)
         print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
 
