@@ -136,7 +136,7 @@
       {% endfor %}
     </div>
     <div class=center>
-      <button class=below_btn onclick="alert('향후 구현 예정입니다.');">START TRAINING</button>
+      <button class=below_btn onclick="TRAINING_BUTTON_CONTROL();">START TRAINING</button>
       <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
         SUMMARY</button>
     </div>
@@ -410,6 +410,10 @@
 
     var count = 0;
 
+    function TRAINING_BUTTON_CONTROL() {
+      generatePacket('START_TRAINING', '', '');
+    }
+
     function SUMMARY_BUTTON_CONTROL() {
       document.getElementById('id03').style.display = 'block';
       $('#loading_statistics').show(200);
@@ -666,6 +670,7 @@
         contentType: "application/json",
         data: JSON.stringify(packet),
         type: 'POST',
+        async: false,
         success: function (result) {
           //console.log(packet);
           if (packet['ORDER'] == 'TARGET') {
@@ -757,6 +762,9 @@
             setTimeout(function () {
               generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
             }, 300);
+          }
+          if (packet['ORDER'] == 'START_TRAINING') {
+            alert(result);
           }
           if (packet['ORDER'] == 'STATISTICS') {
             $('#loading_statistics').hide(200);

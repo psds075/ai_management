@@ -161,6 +161,11 @@ def sending_data():
         print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
 
+    if(request.json['ORDER'] == 'START_TRAINING'):
+        response = requests.post('http://dentibot.iptime.org:5002/api')
+        print(json.loads(response.text)['STATUS'])
+        return json.dumps(json.loads(response.text)['STATUS'])
+
     if(request.json['ORDER'] == 'STATISTICS'):
         LABEL_RANK = label_statistics()
         return json.dumps(LABEL_RANK)
