@@ -670,7 +670,7 @@
         contentType: "application/json",
         data: JSON.stringify(packet),
         type: 'POST',
-        async: false,
+        async: true,
         success: function (result) {
           //console.log(packet);
           if (packet['ORDER'] == 'TARGET') {
