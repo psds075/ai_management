@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -186,11 +186,6 @@ def label_statistics():
         if(os.path.isdir(BASE_DIR+DB_NAME)):
             if os.path.isfile(BASE_DIR+DB_NAME+'.xls'):
                 folderlist.append(DB_NAME)
-
-    if not os.path.isdir('train'):
-        os.mkdir('train')
-    if not os.path.isdir('test'):
-        os.mkdir('test')
 
     LABEL_LIST = []
 

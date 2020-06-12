@@ -155,14 +155,14 @@
       <div id="main_input" width=60% style='display:none;overflow-y:scroll;height:250px'>
         <br>
         <p id='TMJ_RADIOBUTTON' class='w3-text-white'>
-          TMJ DISORDER LEFT :
-          <button id=TMJ_LEFT_NORMAL_BUTTON class="w3-button w3-grey w3-hover-black w3-padding-small">Normal</button>
-          <button id=TMJ_LEFT_ABNORMAL_BUTTON class="w3-button w3-grey w3-hover-red w3-padding-small">Abnormal</button>
-        </p>
-        <p id='TMJ_RADIOBUTTON' class='w3-text-white'>
           TMJ DISORDER RIGHT :
           <button id=TMJ_RIGHT_NORMAL_BUTTON class="w3-button w3-grey w3-hover-black w3-padding-small">Normal</button>
           <button id=TMJ_RIGHT_ABNORMAL_BUTTON class="w3-button w3-grey w3-hover-red w3-padding-small">Abnormal</button>
+        </p>
+        <p id='TMJ_RADIOBUTTON' class='w3-text-white'>
+          TMJ DISORDER LEFT :
+          <button id=TMJ_LEFT_NORMAL_BUTTON class="w3-button w3-grey w3-hover-black w3-padding-small">Normal</button>
+          <button id=TMJ_LEFT_ABNORMAL_BUTTON class="w3-button w3-grey w3-hover-red w3-padding-small">Abnormal</button>
         </p>
         <p id='OSTEOPOROSIS_RADIOBUTTON' class=w3-text-white>
           OSTEOPOROSIS :
@@ -670,7 +670,7 @@
         contentType: "application/json",
         data: JSON.stringify(packet),
         type: 'POST',
-        async: false,
+        async: true,
         success: function (result) {
           //console.log(packet);
           if (packet['ORDER'] == 'TARGET') {
