@@ -174,7 +174,8 @@
         <br>
         <p>
           <button class="w3-button w3-grey w3-hover-black" id="CONFIRM_BUTTON">CONFIRM</button>
-          <button class="w3-button w3-red w3-hover-grey w3-right" style="margin-right:650px" id="DELETE_BUTTON">DELETE</button>
+          <button class="w3-button w3-red w3-hover-grey w3-right" style="margin-right:650px"
+            id="DELETE_BUTTON">DELETE</button>
         </p>
       </div>
       <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
@@ -399,20 +400,30 @@
       $('.CURRENT').removeClass('UNCONFIRM');
       $('.CURRENT').removeClass('CURRENT');
       openTab(TAB_STATUS);
-      //console.log(TAB_STATUS);
       if (TAB_STATUS == 'UNCONFIRM') {
         if ($('.UNCONFIRM').length != 0) {
           setTimeout(function () {
             openImage($('.UNCONFIRM')[0].id + '.jpg');
           }, 300);
         }
+        else{
+          window.location.href = "/viewer";
+        }
       }
     });
 
     $('#DELETE_BUTTON').click(function () {
       var delete_check = confirm("정말로 삭제하시겠습니까?");
-      if(delete_check == true){
-        alert("삭제합니다.");
+      if (delete_check == true) {
+        $('#main_img').hide(200);
+        $('#main_input').hide(200);
+        commandLine(FILENAME + ' DELETE');
+        generatePacket('LABEL', 'CONFIRM_CHECK', 'DELETE');
+        $('.CURRENT').addClass('DELETE');
+        $('.CURRENT').addClass('READ');
+        $('.CURRENT').removeClass('UNCONFIRM');
+        $('.CURRENT').removeClass('CURRENT');
+        openTab(TAB_STATUS);
       }
     });
 
@@ -521,9 +532,18 @@
 
       //PREDICTION RESET BUTTON
       $('#PREDICTION_BUTTON').click(function () {
-        loadingStart();
-        $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-        generatePacket('PREDICTION', '', '');
+        function execute1() {
+          return new Promise(function (resolve) {
+            loadingStart();
+            $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+            resolve(1);
+          })
+        }
+        async function execute() {
+          result = await execute1();
+          generatePacket('PREDICTION', '', '');
+        }
+        execute();
       });
       $('#RESET_BUTTON').click(function () {
         annotator.clear_all();
@@ -564,6 +584,7 @@
     BUTTON_CONROL();
 
     function openImage(FILENAME_CURRENT) {
+
       FILENAME = FILENAME_CURRENT;
       actual_image_width(FILENAME);
       annotator_stop = true;
@@ -580,9 +601,19 @@
       $('#contrast input').val(50);
       TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + 100 + '%' + ')' });
       TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + 100 + '%' + ')' });
-      loadingStart();
-      sendToServer(parameter);
-      commandLine(FILENAME + ' OPEN');
+
+      function execute1() {
+        return new Promise(function (resolve) {
+          loadingStart();
+          resolve(1);
+        })
+      }
+      async function execute() {
+        result = await execute1();
+        sendToServer(parameter);
+        commandLine(FILENAME + ' OPEN');
+      }
+      execute();
     }
 
     function sendCompleteLabeling() {
@@ -592,8 +623,9 @@
     }
 
     function openTab(tabName) {
-      $('.CURRENT').addClass('READ');
-      $('.CURRENT').removeClass('CURRENT');
+      //$('.CURRENT').addClass('READ');
+      //$('.CURRENT').removeClass('CURRENT');
+      $('.DELETE').hide(200);
       if (tabName == 'CONFIRM') {
         $('.CONFIRM').show(200);
         $('.UNCONFIRM').hide(200);
@@ -647,7 +679,7 @@
         }
       }
       if (TAB_STATUS == 'ALL') {
-        div_tag = $('.ARTICLE_LIST')
+        div_tag = $('.CONFIRM, .UNCONFIRM')
         for (var i = 0; i < div_tag.length; i++) {
           if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
             div_tag[i].style.display = "";
@@ -672,117 +704,158 @@
     }
 
     function sendToServer(packet) {
-      $.ajax({
-        dataType: "JSON",
-        url: "/_JSON",
-        contentType: "application/json",
-        data: JSON.stringify(packet),
-        type: 'POST',
-        async: true,
-        success: function (result) {
-          //console.log(packet);
-          if (packet['ORDER'] == 'TARGET') {
-            result = JSON.parse(result);
-            if (result['REVIEW_CHECK'] == 'UNREAD') {
-              generatePacket('PREDICTION', '', '');
-            } else {
-              if (result['PREDICTION_CHECK'] == 'PREDICT') {
+      console.log(packet);
+      return new Promise(function (resolve, reject) {
+        $.ajax({
+          dataType: "JSON",
+          url: "/_JSON",
+          contentType: "application/json",
+          data: JSON.stringify(packet),
+          type: 'POST',
+          async: true,
+          success: function (result) {
+            console.log(result);
+            if (packet['ORDER'] == 'TARGET') {
+              result = JSON.parse(result);
+              if (result['REVIEW_CHECK'] == 'UNREAD') {
+                generatePacket('PREDICTION', '', '');
                 $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-              }
-              else {
-                $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
-              }
-              setTimeout(function () {
-                annotator_stop = true;
-                annotator.clear_all();
-                if (result['BBOX_LABEL'] == '') {
-                  result['BBOX_LABEL'] = '[]';
+              } else {
+                if (result['PREDICTION_CHECK'] == 'PREDICT') {
+                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
                 }
-                var labels = JSON.parse(result['BBOX_LABEL']);
-                labels.forEach(function (each_label) {
-                  var rect = {
-                    left: each_label.left * image_ratio,
-                    top: each_label.top * image_ratio,
-                    width: each_label.width * image_ratio,
-                    height: each_label.height * image_ratio
-                  };
-                  rect.label = each_label.label;
-                  annotator.add_entry(rect);
-                });
-                annotator_stop = false;
-                LABEL_ONOFF_CONTROL('ON');
-                showPage();
-              }, 100);
+                else {
+                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+                }
+                setTimeout(function () {
+                  annotator_stop = true;
+                  annotator.clear_all();
+                  if (result['BBOX_LABEL'] == '') {
+                    result['BBOX_LABEL'] = '[]';
+                  }
+                  var labels = JSON.parse(result['BBOX_LABEL']);
+                  labels.forEach(function (each_label) {
+                    var rect = {
+                      left: each_label.left * image_ratio,
+                      top: each_label.top * image_ratio,
+                      width: each_label.width * image_ratio,
+                      height: each_label.height * image_ratio
+                    };
+                    rect.label = each_label.label;
+                    annotator.add_entry(rect);
+                  });
+                  annotator_stop = false;
+                  LABEL_ONOFF_CONTROL('ON');
+                  showPage();
+                }, 100);
+              }
+              if (result['TMJ_LEFT'] == '') {
+                TMJ_LEFT_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
+                TMJ_LEFT_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                TMJ_LEFT_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['TMJ_RIGHT'] == '') {
+                TMJ_RIGHT_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['TMJ_RIGHT']) > 0.5) {
+                TMJ_RIGHT_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                TMJ_RIGHT_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['OSTEOPOROSIS'] == '') {
+                OSTEOPOROSIS_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['OSTEOPOROSIS']) > 0.5) {
+                OSTEOPOROSIS_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                OSTEOPOROSIS_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['CONFIRM_CHECK'] == 'CONFIRM') {
+                $('#CONFIRM_BUTTON').attr("class", "w3-button w3-black w3-hover-black");
+              } else {
+                $('#CONFIRM_BUTTON').attr("class", "w3-button w3-grey w3-hover-black");
+              }
+              $('#TEXT_AREA').val(result['COMMENT_TEXT']);
+              $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
             }
-            if (result['TMJ_LEFT'] == '') {
-              TMJ_LEFT_BUTTON_CONTROL('NONE');
-            } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
-              TMJ_LEFT_BUTTON_CONTROL('ABNORMAL');
-            } else {
-              TMJ_LEFT_BUTTON_CONTROL('NORMAL');
+            if (packet['ORDER'] == 'PREDICTION') {
+              annotator_stop = true;
+              annotator.clear_all();
+              result.forEach(function (each_label) {
+                var rect = {
+                  left: parseInt(each_label.left * image_ratio),
+                  top: parseInt(each_label.top * image_ratio),
+                  width: parseInt(each_label.width * image_ratio),
+                  height: parseInt(each_label.height * image_ratio)
+                };
+                rect.label = each_label.label;
+                annotator.add_entry(rect);
+              });
+              annotator_stop = false;
+              showPage();
+
+
+              var parameter = {};
+              parameter['DATASET'] = DATASET;
+              parameter['ORDER'] = 'LABEL';
+              parameter['FILENAME'] = FILENAME;
+              parameter['PARAMETER'] = 'BBOX_LABEL';
+              parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+              parameter['RATIO'] = image_ratio;
+
+              /*
+              sendToServer(parameter);
+              $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+              setTimeout(function () {
+                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
+              }, 300);
+              */
+
+              async function execute() {
+                result = await sendToServer(parameter);
+                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
+                commandLine(FILENAME + ' OPEN');
+              }
+              execute();
+
+              /*
+              function execute1() {
+                return new Promise(function (resolve) {
+                  var parameter = {};
+                  parameter['DATASET'] = DATASET;
+                  parameter['ORDER'] = 'LABEL';
+                  parameter['FILENAME'] = FILENAME;
+                  parameter['PARAMETER'] = 'BBOX_LABEL';
+                  parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+                  parameter['RATIO'] = image_ratio;
+                  sendToServer(parameter);
+                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+                  resolve(1);
+                })
+              }
+              async function execute() {
+                result = await execute1();
+                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
+                commandLine(FILENAME + ' OPEN');
+              }
+              execute();
+              */
+
             }
-            if (result['TMJ_RIGHT'] == '') {
-              TMJ_RIGHT_BUTTON_CONTROL('NONE');
-            } else if (parseInt(result['TMJ_RIGHT']) > 0.5) {
-              TMJ_RIGHT_BUTTON_CONTROL('ABNORMAL');
-            } else {
-              TMJ_RIGHT_BUTTON_CONTROL('NORMAL');
+            if (packet['ORDER'] == 'START_TRAINING') {
+              alert(result);
             }
-            if (result['OSTEOPOROSIS'] == '') {
-              OSTEOPOROSIS_BUTTON_CONTROL('NONE');
-            } else if (parseInt(result['OSTEOPOROSIS']) > 0.5) {
-              OSTEOPOROSIS_BUTTON_CONTROL('ABNORMAL');
-            } else {
-              OSTEOPOROSIS_BUTTON_CONTROL('NORMAL');
+            if (packet['ORDER'] == 'STATISTICS') {
+              $('#loading_statistics').hide(200);
+              $('#statistics_contents').show(200);
+              $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
+              for (var i = 0; i < result.length; i++) {
+                $("#statistics_table").append('<tr><td class="w3-center">' + result[i][0] + '</td><td class="w3-center">' + result[i][1] + '</td></tr>');
+              }
             }
-            if (result['CONFIRM_CHECK'] == 'CONFIRM') {
-              $('#CONFIRM_BUTTON').attr("class", "w3-button w3-black w3-hover-black");
-            } else {
-              $('#CONFIRM_BUTTON').attr("class", "w3-button w3-grey w3-hover-black");
-            }
-            $('#TEXT_AREA').val(result['COMMENT_TEXT']);
-            $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
+            resolve(1);
           }
-          if (packet['ORDER'] == 'PREDICTION') {
-            annotator_stop = true;
-            annotator.clear_all();
-            result.forEach(function (each_label) {
-              var rect = {
-                left: parseInt(each_label.left * image_ratio),
-                top: parseInt(each_label.top * image_ratio),
-                width: parseInt(each_label.width * image_ratio),
-                height: parseInt(each_label.height * image_ratio)
-              };
-              rect.label = each_label.label;
-              annotator.add_entry(rect);
-            });
-            annotator_stop = false;
-            showPage();
-            var parameter = {};
-            parameter['DATASET'] = DATASET;
-            parameter['ORDER'] = 'LABEL';
-            parameter['FILENAME'] = FILENAME;
-            parameter['PARAMETER'] = 'BBOX_LABEL';
-            parameter['SETVALUE'] = JSON.stringify(annotator.entries);
-            parameter['RATIO'] = image_ratio;
-            sendToServer(parameter);
-            $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-            setTimeout(function () {
-              generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
-            }, 300);
-          }
-          if (packet['ORDER'] == 'START_TRAINING') {
-            alert(result);
-          }
-          if (packet['ORDER'] == 'STATISTICS') {
-            $('#loading_statistics').hide(200);
-            $('#statistics_contents').show(200);
-            $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
-            for (var i = 0; i < result.length; i++) {
-              $("#statistics_table").append('<tr><td class="w3-center">' + result[i][0] + '</td><td class="w3-center">' + result[i][1] + '</td></tr>');
-            }
-          }
-        }
+        });
       });
     }
 
@@ -855,6 +928,8 @@
       i++;
     }
     commandLine(DATASET + ' OPEN');
+
+    openTab('UNCONFIRM');
 
   </script>
 

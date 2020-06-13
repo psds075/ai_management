@@ -41,7 +41,7 @@ def viewer(DATASET_NAME):
             try:
                 df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
                 if 'CONFIRM_CHECK' in df:
-                    if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() != len(df)):
+                    if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() + (df['CONFIRM_CHECK'] == 'DELETE').sum() != len(df)):
                         datasetlist.append({'DATASET_NAME' : DIR})
                     elif(len(os.listdir(BASE_DIR+DIR)) != len(df)):
                         datasetlist.append({'DATASET_NAME' : DIR})
@@ -134,12 +134,15 @@ def sending_data():
     if(request.json['ORDER'] == 'LABEL'):
         df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', na_rep='')
         if(DEBUG_MODE == True):
-            print(df)
+            pass
+            #print(df)
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
         if(DEBUG_MODE == True):
             print(request.json['PARAMETER'],str(request.json['SETVALUE']))
         df[request.json['PARAMETER']].iloc[i]=str(request.json['SETVALUE'])
         if(request.json['PARAMETER'] == 'BBOX_LABEL'):
+            if(df[request.json['PARAMETER']].iloc[i] == ''):
+                df[request.json['PARAMETER']].iloc[i] = '[]'
             BBOX_LABEL = json.loads(df[request.json['PARAMETER']].iloc[i])
             for EACH_LABEL in BBOX_LABEL:
                 EACH_LABEL['left'] = int(EACH_LABEL['left'] / request.json['RATIO'])
@@ -150,7 +153,8 @@ def sending_data():
         if(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
             df['TIMESTAMP'].iloc[i] = str(pd.Timestamp('now'))
         if(DEBUG_MODE == True):
-            print(df)
+            pass
+            #print(df)
         df.to_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
         return json.dumps('Success')
 
@@ -160,12 +164,14 @@ def sending_data():
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
         response = requests.post('http://psds075.iptime.org:5001/api', json=mydata)
-        print(json.loads(response.text)['message'])
+        if(DEBUG_MODE == True):
+            print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
 
     if(request.json['ORDER'] == 'START_TRAINING'):
         response = requests.post('http://dentibot.iptime.org:5002/api')
-        print(json.loads(response.text)['STATUS'])
+        if(DEBUG_MODE == True):
+            print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])
 
     if(request.json['ORDER'] == 'STATISTICS'):
