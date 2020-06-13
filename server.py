@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -18,7 +18,7 @@ with open('env.json') as json_file:
 BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
-TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK']
+TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK','TIMESTAMP']
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -136,7 +136,8 @@ def sending_data():
         if(DEBUG_MODE == True):
             print(df)
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
-        print(request.json['PARAMETER'],str(request.json['SETVALUE']))
+        if(DEBUG_MODE == True):
+            print(request.json['PARAMETER'],str(request.json['SETVALUE']))
         df[request.json['PARAMETER']].iloc[i]=str(request.json['SETVALUE'])
         if(request.json['PARAMETER'] == 'BBOX_LABEL'):
             BBOX_LABEL = json.loads(df[request.json['PARAMETER']].iloc[i])
@@ -146,9 +147,10 @@ def sending_data():
                 EACH_LABEL['width'] = int(EACH_LABEL['width'] / request.json['RATIO'])
                 EACH_LABEL['height'] = int(EACH_LABEL['height'] / request.json['RATIO'])
             df[request.json['PARAMETER']].iloc[i] = json.dumps(BBOX_LABEL)
+        if(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
+            df['TIMESTAMP'].iloc[i] = str(pd.Timestamp('now'))
         if(DEBUG_MODE == True):
             print(df)
-            pass
         df.to_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
         return json.dumps('Success')
 
