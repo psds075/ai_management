@@ -164,7 +164,7 @@ def sending_data():
         img = hanimread(target_image) #img = cv2.imread(target_image) 대체
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
-        response = requests.post('http://psds075.iptime.org:5001/api', json=mydata)
+        response = requests.post('http://dentibot.iptime.org:5001/api', json=mydata)
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
