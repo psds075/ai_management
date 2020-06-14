@@ -239,7 +239,7 @@ def prediction_statistics():
     # PRECISION 카운팅
     for DATASET_NAME in folderlist[:]:
         df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
-        if 'BBOX_LABEL' in df:
+        if ('BBOX_LABEL' in df) and ('PREDICTION_CHECK' in df):
             for i in range(len(df)):
                 if (df['CONFIRM_CHECK'].iloc[i] == 'CONFIRM'):
                     CONFIRM_COUNT+=1
