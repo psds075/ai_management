@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -137,6 +137,7 @@ def sending_data():
             pass
             #print(df)
         i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
+        print(request.json['PARAMETER'],str(request.json['SETVALUE']))
         if(DEBUG_MODE == True):
             print(request.json['PARAMETER'],str(request.json['SETVALUE']))
         df[request.json['PARAMETER']].iloc[i]=str(request.json['SETVALUE'])
