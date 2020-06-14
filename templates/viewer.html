@@ -293,12 +293,12 @@
         <div id="loading_statistics" style='display:none'></div>
         <div id="statistics_contents">
           <h2>Precision Statistics</h2>
-          <table class="w3-table-all w3-hoverable">
+          <table id='precision_table' class="w3-table-all w3-hoverable">
             <thead>
               <tr class="w3-black">
                 <th class="w3-center">학습날짜</th>
                 <th class="w3-center">총 데이터 수</th>
-                <th class="w3-center">mAP Precision</th>
+                <th class="w3-center">Average Precision</th>
               </tr>
             </thead>
             <tr>
@@ -406,7 +406,7 @@
             openImage($('.UNCONFIRM')[0].id + '.jpg');
           }, 300);
         }
-        else{
+        else {
           window.location.href = "/viewer";
         }
       }
@@ -803,43 +803,12 @@
               parameter['SETVALUE'] = JSON.stringify(annotator.entries);
               parameter['RATIO'] = image_ratio;
 
-              /*
-              sendToServer(parameter);
-              $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-              setTimeout(function () {
-                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
-              }, 300);
-              */
-
               async function execute() {
                 result = await sendToServer(parameter);
                 generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
                 commandLine(FILENAME + ' OPEN');
               }
               execute();
-
-              /*
-              function execute1() {
-                return new Promise(function (resolve) {
-                  var parameter = {};
-                  parameter['DATASET'] = DATASET;
-                  parameter['ORDER'] = 'LABEL';
-                  parameter['FILENAME'] = FILENAME;
-                  parameter['PARAMETER'] = 'BBOX_LABEL';
-                  parameter['SETVALUE'] = JSON.stringify(annotator.entries);
-                  parameter['RATIO'] = image_ratio;
-                  sendToServer(parameter);
-                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-                  resolve(1);
-                })
-              }
-              async function execute() {
-                result = await execute1();
-                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
-                commandLine(FILENAME + ' OPEN');
-              }
-              execute();
-              */
 
             }
             if (packet['ORDER'] == 'START_TRAINING') {
@@ -848,9 +817,16 @@
             if (packet['ORDER'] == 'STATISTICS') {
               $('#loading_statistics').hide(200);
               $('#statistics_contents').show(200);
+              console.log(result);
+              LABEL_RANK = result['LABEL_RANK']
               $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
-              for (var i = 0; i < result.length; i++) {
-                $("#statistics_table").append('<tr><td class="w3-center">' + result[i][0] + '</td><td class="w3-center">' + result[i][1] + '</td></tr>');
+              for (var i = 0; i < LABEL_RANK.length; i++) {
+                $("#statistics_table").append('<tr><td class="w3-center">' + LABEL_RANK[i][0] + '</td><td class="w3-center">' + LABEL_RANK[i][1] + '</td></tr>');
+              }
+              PRECISION_DATA = result['PRECISION_DATA']
+              $("#precision_table").html('<thead><tr class="w3-black"><th class="w3-center">학습날짜</th><th class="w3-center">총 데이터 수</th><th class="w3-center">Average Precision</th></tr></thead>');
+              for (var i = 0; i < PRECISION_DATA.length; i++) {
+                $("#precision_table").append('<tr><td class="w3-center">' + PRECISION_DATA[i][0] + '</td><td class="w3-center">' + PRECISION_DATA[i][1] + '</td><td class="w3-center">' + PRECISION_DATA[i][2] + '</td></tr>');
               }
             }
             resolve(1);

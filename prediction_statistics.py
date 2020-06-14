@@ -32,7 +32,7 @@ for DATASET_NAME in folderlist[:]:
                 if (df['PREDICTION_CHECK'].iloc[i] == 'PREDICT'):
                     PREDICT_COUNT+=1
                 if (df['PREDICTION_CHECK'].iloc[i] == 'NO_PREDICT'):
-                    PREDICT_COUNT+=1
+                    NO_PREDICT+=1
                 if (df['PREDICTION_CHECK'].iloc[i] == ''):
                     NOT_CHECKED+=1
                 
