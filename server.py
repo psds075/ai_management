@@ -10,7 +10,7 @@ import base64
 import numpy as np
 
 app = Flask(__name__)
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -30,6 +30,9 @@ def viewer(DATASET_NAME):
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
+
+    response = requests.post('http://dentibot.iptime.org:5002/api')
+    training_status = json.loads(response.text)['STATUS']
 
     datasetlist = []
     archivelist = []
@@ -98,7 +101,7 @@ def viewer(DATASET_NAME):
             datalist.append(data)
         df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
 
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False))
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status)
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
@@ -170,10 +173,17 @@ def sending_data():
         return json.dumps(json.loads(response.text)['message'])
 
     if(request.json['ORDER'] == 'START_TRAINING'):
+        response = requests.post('http://dentibot.iptime.org:5002/start')
+        if(DEBUG_MODE == True):
+            print(json.loads(response.text)['STATUS'])
+        return json.dumps(json.loads(response.text)['STATUS'])
+
+    if(request.json['ORDER'] == 'TRAINING_STATUS'):
         response = requests.post('http://dentibot.iptime.org:5002/api')
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])
+
 
     if(request.json['ORDER'] == 'STATISTICS'):
         LABEL_RANK = label_statistics()

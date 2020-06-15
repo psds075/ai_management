@@ -136,7 +136,9 @@
       {% endfor %}
     </div>
     <div class=center>
-      <button class=below_btn onclick="TRAINING_BUTTON_CONTROL();">START TRAINING</button>
+      <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START TRAINING</button>
+      <button id=PROGRESSING_BUTTON class=below_btn onclick="PROGRESSING_BUTTON_CONTROL();" style='display:none;'><i
+          class="fa fa-spinner fa-spin"></i> PROGRESSING</button>
       <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
         SUMMARY</button>
     </div>
@@ -430,7 +432,24 @@
     var count = 0;
 
     function TRAINING_BUTTON_CONTROL() {
-      generatePacket('START_TRAINING', '', '');
+      var training_check = confirm("TRAINING 하시겠습니까?");
+      if (training_check == true) {
+        generatePacket('START_TRAINING', '', '');
+        window.location.reload();
+      }
+    }
+
+    function PROGRESSING_BUTTON_CONTROL() {
+      generatePacket('TRAINING_STATUS', '', '');
+    }
+
+    if ('{{training_status}}' == 'STOP') {
+      $('#TRAINING_BUTTON').css('display', '');
+      $('#PROGRESSING_BUTTON').css('display', 'none');
+    }
+    else{
+      $('#TRAINING_BUTTON').css('display', 'none');
+      $('#PROGRESSING_BUTTON').css('display', '');
     }
 
     function SUMMARY_BUTTON_CONTROL() {
@@ -814,6 +833,9 @@
             if (packet['ORDER'] == 'START_TRAINING') {
               alert(result);
             }
+            if (packet['ORDER'] == 'TRAINING_STATUS') {
+              alert(result);
+            }
             if (packet['ORDER'] == 'STATISTICS') {
               $('#loading_statistics').hide(200);
               $('#statistics_contents').show(200);
@@ -904,7 +926,6 @@
       i++;
     }
     commandLine(DATASET + ' OPEN');
-
     openTab('UNCONFIRM');
 
   </script>
