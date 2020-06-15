@@ -136,9 +136,15 @@
       {% endfor %}
     </div>
     <div class=center>
-      <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START TRAINING</button>
-      <button id=PROGRESSING_BUTTON class=below_btn onclick="PROGRESSING_BUTTON_CONTROL();" style='display:none;'><i
-          class="fa fa-spinner fa-spin"></i> PROGRESSING</button>
+      <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START
+        TRAINING</button>
+      <button id=PROGRESSING_BUTTON class=below_btn onclick="PROGRESSING_BUTTON_CONTROL();" style='display:none;'>
+        <i class="fa fa-spinner fa-spin"></i>
+        PROGRESSING
+        <div class="w3-light-grey" style='float:inline-end'>
+          <div class="w3-blue" style="height:3px;width:{{training_percent}}%;float:inline-end"></div>
+        </div>
+      </button>
       <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
         SUMMARY</button>
     </div>
@@ -447,7 +453,7 @@
       $('#TRAINING_BUTTON').css('display', '');
       $('#PROGRESSING_BUTTON').css('display', 'none');
     }
-    else{
+    else {
       $('#TRAINING_BUTTON').css('display', 'none');
       $('#PROGRESSING_BUTTON').css('display', '');
     }

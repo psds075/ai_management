@@ -33,7 +33,10 @@ def viewer(DATASET_NAME):
 
     response = requests.post('http://dentibot.iptime.org:5002/api')
     training_status = json.loads(response.text)['STATUS']
-
+    if(len(training_status.split(' '))==4):
+        training_percent = training_status.split(' ')[2]
+    else:
+        training_percent = 0
     datasetlist = []
     archivelist = []
     for DIR in os.listdir(BASE_DIR):
@@ -101,7 +104,7 @@ def viewer(DATASET_NAME):
             datalist.append(data)
         df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
 
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status)
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent)
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
