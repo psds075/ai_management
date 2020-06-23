@@ -31,7 +31,7 @@ def viewer(DATASET_NAME):
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
 
-    response = requests.post('http://dentibot.iptime.org:5002/api')
+    response = requests.post('http://127.0.0.1:5002/api')
     training_status = json.loads(response.text)['STATUS']
     if(len(training_status.split(' '))==4):
         training_percent = training_status.split(' ')[2]
@@ -170,19 +170,19 @@ def sending_data():
         img = hanimread(target_image) #img = cv2.imread(target_image) 대체
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
-        response = requests.post('http://dentibot.iptime.org:5001/api', json=mydata)
+        response = requests.post('http://127.0.0.1:5001/api', json=mydata)
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
 
     if(request.json['ORDER'] == 'START_TRAINING'):
-        response = requests.post('http://dentibot.iptime.org:5002/start')
+        response = requests.post('http://127.0.0.1:5002/start')
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])
 
     if(request.json['ORDER'] == 'TRAINING_STATUS'):
-        response = requests.post('http://dentibot.iptime.org:5002/api')
+        response = requests.post('http://127.0.0.1:5002/api')
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])

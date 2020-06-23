@@ -5,8 +5,13 @@ import os
 import pandas as pd
 import json
 
+# 디렉토리 불러오기
+with open('env.json') as json_file:
+    data = json.load(json_file)
+    BASE_DIR = data['BASE_DIR']
+
 # Connection
-myclient = pymongo.MongoClient("mongodb://ai:1111@aiqub.iptime.org:27017/")
+myclient = pymongo.MongoClient("mongodb://ai:1111@127.0.0.1:27017/")
 
 # DB 초기화
 DENTIQUB = myclient["DENTIQUB"]
@@ -17,11 +22,6 @@ imagedata.create_index('FILENAME', unique=True)
 dataset = DENTIQUB["dataset"]
 dataset.delete_many({})
 dataset.create_index('NAME', unique=True)
-
-# 디렉토리 불러오기
-with open('env.json') as json_file:
-    data = json.load(json_file)
-    BASE_DIR = data['BASE_DIR']
 
 # 폴더명 확인
 folderlist = []
@@ -35,17 +35,22 @@ for DATASET_NAME in folderlist[:]:
     df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1')
     df = df.fillna('')
     df['DATASET_NAME'] = DATASET_NAME
-    del df['GUIDED_FILENAME'], df['SEX'], df['AGE'], df['STATUS']
+    if('GUIDED_FILENAME' in df):
+        del df['GUIDED_FILENAME']
+    if('SEX' in df):
+        del df['SEX']
+    if('AGE' in df):
+        del df['AGE']
+    if('STATUS' in df):
+        del df['STATUS']
     try:
         imagedata.insert_many(df.to_dict('records'))
     except:
         print('input error.')
-    
     if not dataset.find_one({'NAME':DATASET_NAME}):
         dataset.insert_one({'NAME':DATASET_NAME,'STATUS':'INSERTED'})
-        print('test')
-
-
+    
+    print(DATASET_NAME)
 
 '''
 # DB 내용 확인
