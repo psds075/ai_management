@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
 import os
 import json
 import pandas as pd
@@ -11,13 +11,22 @@ import numpy as np
 import pymongo
 
 app = Flask(__name__)
-DEBUG_MODE = False
+app.secret_key = b'123'
+DEBUG_MODE = True
 
-# Connection
-myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-DENTIQUB = myclient["DENTIQUB"]
-imagedata = DENTIQUB["imagedata"]
-dataset = DENTIQUB["dataset"]
+# 일반 로그인 관련 
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
+            session['logged_in'] = True
+            return redirect(url_for('viewer'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session['logged_in'] = False
+    return redirect(url_for('login'))
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -34,6 +43,17 @@ def index():
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
+    
+    if not session.get('logged_in'):
+        print('test')
+        return redirect(url_for('login'))
+
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+    
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
@@ -85,13 +105,16 @@ def viewer(DATASET_NAME):
                     'CONFIRM_CHECK': image['CONFIRM_CHECK'],
                     }
             datalist.append(data)
-
-    print('speed_test_end')
         
     return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent)
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
+
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
 
     if(request.json['ORDER'] == 'TARGET'):
         target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
@@ -182,16 +205,21 @@ def thumb_database(path):
 
 def label_statistics():
 
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+
     LABEL_LIST = []
-    
-    for image in imagedata.find({}):
-        print(image)
-        if ('BBOX_LABEL' in image) and ('CONFIRM_CHECK' in image):
-            if (image['CONFIRM_CHECK'] == 'CONFIRM'):
-                BBOX_LABEL = json.loads(image['BBOX_LABEL'])
-                for j in range(len(BBOX_LABEL)):
-                    class_name = str(BBOX_LABEL[j]['label'])
-                    LABEL_LIST.append(class_name)
+
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if ('BBOX_LABEL' in image):
+            if((image['BBOX_LABEL']) == ''):
+                image['BBOX_LABEL'] = '[]'
+            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+            for j in range(len(BBOX_LABEL)):
+                class_name = str(BBOX_LABEL[j]['label'])
+                LABEL_LIST.append(class_name)
 
     LABEL_COUNTER = collections.Counter(LABEL_LIST)
     LABEL_RANK = []
@@ -203,24 +231,28 @@ def label_statistics():
 
 def prediction_statistics():
 
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+
     CONFIRM_COUNT = 0
     PREDICT_COUNT = 0
     NO_PREDICT_COUNT = 0
     NOT_CHECKED = 0
 
-    for image in imagedata.find():
-        if ('BBOX_LABEL' in image) and ('CONFIRM' in image):
-            if (image['CONFIRM_CHECK'] == 'CONFIRM'):
-                CONFIRM_COUNT+=1
-                if (image['PREDICTION_CHECK'] == 'PREDICT'):
-                    PREDICT_COUNT+=1
-                if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
-                    NO_PREDICT_COUNT+=1
-                if (image['PREDICTION_CHECK'] == ''):
-                    NOT_CHECKED+=1
-    
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        CONFIRM_COUNT+=1
+        if 'PREDICTION_CHECK' in image:
+            if (image['PREDICTION_CHECK'] == 'PREDICT'):
+                PREDICT_COUNT+=1
+            if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
+                NO_PREDICT_COUNT+=1
+            if (image['PREDICTION_CHECK'] == ''):
+                NOT_CHECKED+=1
+        
 
-    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(CONFIRM_COUNT*100+0.1))
+    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(PREDICT_COUNT+NO_PREDICT_COUNT+NOT_CHECKED+0.1)*100)
     CURRENT_DATA_AMOUNT = CONFIRM_COUNT
     CURRENT_DATE = 'NOW'
 

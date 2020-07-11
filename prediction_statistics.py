@@ -2,7 +2,17 @@ import os
 import pandas as pd
 import json
 import collections
+import pymongo
 
+'''
+# Connection
+myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+DENTIQUB = myclient["DENTIQUB"]
+imagedata = DENTIQUB["imagedata"]
+dataset = DENTIQUB["dataset"]
+'''
+
+''' PANDAS 코드
 # 디렉토리 불러오기
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -35,11 +45,33 @@ for DATASET_NAME in folderlist[:]:
                     NO_PREDICT_COUNT+=1
                 if (df['PREDICTION_CHECK'].iloc[i] == ''):
                     NOT_CHECKED+=1
-                
+'''
+
+'''
+CONFIRM_COUNT = 0
+PREDICT_COUNT = 0
+NO_PREDICT_COUNT = 0
+NOT_CHECKED = 0
+
+for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+    CONFIRM_COUNT+=1
+    if 'PREDICTION_CHECK' in image:
+        if (image['PREDICTION_CHECK'] == 'PREDICT'):
+            PREDICT_COUNT+=1
+        if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
+            NO_PREDICT_COUNT+=1
+        if (image['PREDICTION_CHECK'] == ''):
+            NOT_CHECKED+=1
+    
+
+CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(CONFIRM_COUNT*100+0.1))
+CURRENT_DATA_AMOUNT = CONFIRM_COUNT
+CURRENT_DATE = 'NOW'
+              
 print('CONFIRM_COUNT :',CONFIRM_COUNT)
 print('PREDICT_COUNT :',PREDICT_COUNT)
 print('NO_PREDICT_COUNT :',NO_PREDICT_COUNT)
 print('NOT_CHECKED :',NOT_CHECKED)
-
+'''
 
 
