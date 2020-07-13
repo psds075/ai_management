@@ -7,6 +7,43 @@ import pandas as pd
 # Connection
 myclient = pymongo.MongoClient("mongodb://ai:1111@aiqub.iptime.org:27017/")
 
+
+'''
+# DentiQub User Account DB
+# Define
+class UserList(UserMixin, me.Document):
+    Name = me.StringField()
+    Id = me.StringField()
+    Password = me.StringField()
+    DateModified = me.DateTimeField(default=datetime.datetime.utcnow)
+
+# Create
+me.connect('DENTIQUB', host='mongodb://ai:1111@dentiqub.iptime.org:27017/?authSource=admin')
+Name = 'AIQUB'
+Id = 'aiqub'
+Password = 'aiqub!'
+if UserList.objects(Id=Id):
+    print("중복입니다.")
+else:
+    user = UserList(Name=Name, Id=Id, Password=Password)
+    user.save()
+me.disconnect()
+
+# Read
+me.connect('DENTIQUB', host='mongodb://ai:1111@dentiqub.iptime.org:27017/?authSource=admin')
+for item in UserList.objects():
+    print(item.Id)
+me.disconnect()
+
+# Delete All
+me.connect('DENTIQUB', host='mongodb://ai:1111@dentiqub.iptime.org:27017/?authSource=admin')
+item = UserList.objects()
+item.delete()
+me.disconnect()
+'''
+
+
+
 '''
 # 디렉토리 불러오기
 with open('env.json') as json_file:

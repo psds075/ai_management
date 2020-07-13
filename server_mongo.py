@@ -66,6 +66,14 @@ def viewer(DATASET_NAME):
         training_percent = 0
     datasetlist = []
     archivelist = []
+
+    for data in dataset.find({'STATUS':'ARCHIVE'}):
+        archivelist.append({'DATASET_NAME':data['NAME']})
+
+    for data in dataset.find({'STATUS':'INSERTED'}):
+        datasetlist.append({'DATASET_NAME':data['NAME']})
+
+    '''
     for DIR in os.listdir(BASE_DIR):
         if(os.path.isdir(BASE_DIR+DIR)):
             if not dataset.find_one({'NAME':DIR}):
@@ -84,6 +92,7 @@ def viewer(DATASET_NAME):
                     datasetlist.append({'DATASET_NAME' : DIR})
             except:
                 print('exception occured.')
+    '''
                 
     if DATASET_NAME == 'NONE':
         datalist = []
