@@ -230,11 +230,17 @@ input:checked + .slider_switch:before {
 .tab-wrap article:target p {
 	display: block;
 }
-.CURRENT{
-  background-color:#45374C;
-}
+
 .READ{
   background-color:#555;
+}
+
+.DELETE{
+  background-color:#ff000033;
+}
+
+.CURRENT{
+  background-color:#45374C;
 }
 
 #mySidebar{

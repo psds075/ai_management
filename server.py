@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
 import os
 import json
 import pandas as pd
@@ -8,9 +8,25 @@ import collections
 import cv2
 import base64
 import numpy as np
+import pymongo
 
 app = Flask(__name__)
+app.secret_key = b'123'
 DEBUG_MODE = True
+
+# 일반 로그인 관련 
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
+            session['logged_in'] = True
+            return redirect(url_for('demo'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session['logged_in'] = False
+    return redirect(url_for('login'))
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -22,16 +38,88 @@ TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OST
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    return render_template('login.html')
+
 
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
+    
+    if not session.get('logged_in'):
+        print('test')
+        return redirect(url_for('login'))
+
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+    
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
 
-    response = requests.post('http://127.0.0.1:5002/api')
+    response = requests.post('http://dentiqub.iptime.org:5001/api')
+    training_status = json.loads(response.text)['STATUS']
+
+    if(len(training_status.split(' '))==4):
+        training_percent = training_status.split(' ')[2]
+    else:
+        training_percent = 0
+    datasetlist = []
+    archivelist = []
+
+    for data in dataset.find({'STATUS':'ARCHIVE'}):
+        archivelist.append({'DATASET_NAME':data['NAME']})
+
+    for data in dataset.find({'STATUS':'INSERTED'}):
+        datasetlist.append({'DATASET_NAME':data['NAME']})
+                
+    if DATASET_NAME == 'NONE':
+        datalist = []
+        archive_check = 'NONE'
+
+    else:
+        archive_check = dataset.find_one({'NAME':DATASET_NAME})['STATUS']
+        if(len(os.listdir(BASE_DIR+DATASET_NAME)) != imagedata.find({'DATASET_NAME' : DATASET_NAME}).count()):
+            for filename in os.listdir(BASE_DIR+DATASET_NAME):
+                if not imagedata.find_one({'FILENAME':filename}):
+                    imagedata.insert_one({'FILENAME':filename,'DATASET_NAME':DATASET_NAME, 'REVIEW_CHECK': 'UNREAD','CONFIRM_CHECK':'UNCONFIRM'})
+        datalist = []
+        for image in imagedata.find({'DATASET_NAME' : DATASET_NAME}):
+            if not 'REVIEW_CHECK' in image:
+                image['REVIEW_CHECK'] = 'UNREAD'
+            if not 'CONFIRM_CHECK' in image:
+                image['CONFIRM_CHECK'] = 'UNCONFIRM'
+            data = {
+                    'FILENAME' : image['FILENAME'],
+                    'REVIEW_CHECK': image['REVIEW_CHECK'],
+                    'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                    }
+            datalist.append(data)
+        
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
+
+
+@app.route("/demo", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
+@app.route("/demo/<string:DATASET_NAME>", methods=['GET', 'POST'])
+def demo(DATASET_NAME):
+    
+    if not session.get('logged_in'):
+        print('test')
+        return redirect(url_for('login'))
+
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+    
+    with open('label_dict.json',encoding = 'utf-8') as json_file:
+        data = json.load(json_file)
+        LABEL_DICT = data['LABEL_DICT']
+
+    response = requests.post('http://dentiqub.iptime.org:5001/api')
     training_status = json.loads(response.text)['STATUS']
     if(len(training_status.split(' '))==4):
         training_percent = training_status.split(' ')[2]
@@ -39,231 +127,257 @@ def viewer(DATASET_NAME):
         training_percent = 0
     datasetlist = []
     archivelist = []
-    for DIR in os.listdir(BASE_DIR):
-        if(os.path.isdir(BASE_DIR+DIR)):
-            if not os.path.isfile(BASE_DIR+DIR+'.xls'):
-                df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DIR)})
-                df.to_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', index = False, float_format=None)
-            try:
-                df = pd.read_excel(BASE_DIR+DIR+'.xls', sheet_name='Sheet1', na_rep='')
-                if 'CONFIRM_CHECK' in df:
-                    if((df['CONFIRM_CHECK'] == 'CONFIRM').sum() + (df['CONFIRM_CHECK'] == 'DELETE').sum() != len(df)):
-                        datasetlist.append({'DATASET_NAME' : DIR})
-                    elif(len(os.listdir(BASE_DIR+DIR)) != len(df)):
-                        datasetlist.append({'DATASET_NAME' : DIR})
-                    else:
-                        archivelist.append({'DATASET_NAME' : DIR})
-                else:
-                    datasetlist.append({'DATASET_NAME' : DIR})
-            except:
-                print('exception occured.')
+
+    for data in dataset.find({'STATUS':'ARCHIVE'}):
+        archivelist.append({'DATASET_NAME':data['NAME']})
+
+    for data in dataset.find({'STATUS':'INSERTED'}):
+        datasetlist.append({'DATASET_NAME':data['NAME']})
+
     if DATASET_NAME == 'NONE':
         datalist = []
+        archive_check = 'NONE'
 
     else:
-        global DB_DIR
-        global DB_NAME
-        DB_NAME = DATASET_NAME
-        DB_DIR = BASE_DIR + DATASET_NAME + '/'
-        if not os.path.isfile(BASE_DIR+DATASET_NAME+'.xls'):
-            df = pd.DataFrame({'FILENAME':os.listdir(BASE_DIR+DATASET_NAME)})
-            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, float_format=None)
-        df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
-        df = df.fillna('')
-
-        check_row = False
-        for filename in os.listdir(BASE_DIR+DATASET_NAME):
-            if not (filename in list(df.FILENAME)):
-                df = df.append({"FILENAME":filename}, ignore_index=True)
-                check_row = True
-        if(check_row == True):
-            df = df.fillna('')
-            df = df.sort_values(by=["FILENAME"])
-            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
-
-        check_column = False
-        for column in TABLE_LIST:
-            if not column in df.columns.tolist():
-                check_column = True
-                df[column] = ''
-        if(check_column == True):
-            df = df.fillna('')
-            df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
-
+        archive_check = dataset.find_one({'NAME':DATASET_NAME})['STATUS']
+        if(len(os.listdir(BASE_DIR+DATASET_NAME)) != imagedata.find({'DATASET_NAME' : DATASET_NAME}).count()):
+            for filename in os.listdir(BASE_DIR+DATASET_NAME):
+                if not imagedata.find_one({'FILENAME':filename}):
+                    imagedata.insert_one({'FILENAME':filename,'DATASET_NAME':DATASET_NAME, 'REVIEW_CHECK': 'UNREAD','CONFIRM_CHECK':'UNCONFIRM'})
         datalist = []
-        df = df.sort_values(by=["FILENAME"])
-        for i in range(len(df)):
-            if(df['REVIEW_CHECK'].iloc[i] == ''):
-                df['REVIEW_CHECK'].iloc[i] = 'UNREAD'
-            if(df['CONFIRM_CHECK'].iloc[i] == ''):
-                df['CONFIRM_CHECK'].iloc[i] = 'UNCONFIRM'
-            data = {'FILENAME' : df['FILENAME'].iloc[i],
-                    'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
-                    'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i])
+        for image in imagedata.find({'DATASET_NAME' : DATASET_NAME}):
+            if not 'REVIEW_CHECK' in image:
+                image['REVIEW_CHECK'] = 'UNREAD'
+            if not 'CONFIRM_CHECK' in image:
+                image['CONFIRM_CHECK'] = 'UNCONFIRM'
+            data = {
+                    'FILENAME' : image['FILENAME'],
+                    'REVIEW_CHECK': image['REVIEW_CHECK'],
+                    'CONFIRM_CHECK': image['CONFIRM_CHECK'],
                     }
             datalist.append(data)
-        df.to_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
-
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent)
+        
+    return render_template('demo.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
-    if(request.json['ORDER'] == 'LIST'):
-        df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', na_rep='')
-        datalist = []
-        for i in range(len(df)):
-            data = {'FILENAME' : df['FILENAME'].iloc[i], 
-                    'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
-                    'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i]),
-                    }
-            datalist.append(data)
-        return json.dumps(datalist)
+
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
 
     if(request.json['ORDER'] == 'TARGET'):
-        df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1')
-        df = df.fillna('')
-        i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
-        data = {'FILENAME' : df['FILENAME'].iloc[i], 
-                'TMJ_LEFT':str(df['TMJ_LEFT'].iloc[i]), 
-                'TMJ_RIGHT':str(df['TMJ_RIGHT'].iloc[i]),
-                'OSTEOPOROSIS':str(df['OSTEOPOROSIS'].iloc[i]), 
-                'COMMENT_TEXT':str(df['COMMENT_TEXT'].iloc[i]),
-                'REVIEW_CHECK':str(df['REVIEW_CHECK'].iloc[i]),
-                'BBOX_LABEL':str(df['BBOX_LABEL'].iloc[i]),
-                'CONFIRM_CHECK':str(df['CONFIRM_CHECK'].iloc[i]),
-                'PREDICTION_CHECK':str(df['PREDICTION_CHECK'].iloc[i])
+        target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
+        if not 'TMJ_LEFT' in target:
+            target['TMJ_LEFT'] = ''
+        if not 'TMJ_RIGHT' in target:
+            target['TMJ_RIGHT'] = ''
+        if not 'OSTEOPOROSIS' in target:
+            target['OSTEOPOROSIS'] = ''
+        if not 'COMMENT_TEXT' in target:
+            target['COMMENT_TEXT'] = ''
+        if not 'REVIEW_CHECK' in target:
+            target['REVIEW_CHECK'] = 'UNREAD'
+        if not 'BBOX_LABEL' in target:
+            target['BBOX_LABEL'] = '[]'
+        if not 'CONFIRM_CHECK' in target:
+            target['CONFIRM_CHECK'] = 'UNCONFIRM'
+        if not 'PREDICTION_CHECK' in target:
+            target['PREDICTION_CHECK'] = 'NO_PREDICT'
+        data = {'FILENAME' : target['FILENAME'], 
+                'TMJ_LEFT':target['TMJ_LEFT'], 
+                'TMJ_RIGHT':target['TMJ_RIGHT'],
+                'OSTEOPOROSIS':target['OSTEOPOROSIS'], 
+                'COMMENT_TEXT':target['COMMENT_TEXT'],
+                'REVIEW_CHECK':target['REVIEW_CHECK'],
+                'BBOX_LABEL':target['BBOX_LABEL'],
+                'CONFIRM_CHECK':target['CONFIRM_CHECK'],
+                'PREDICTION_CHECK':target['PREDICTION_CHECK']
                 }
-        df['REVIEW_CHECK'].iloc[i]='READ'
-        df.to_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+        
+        target['REVIEW_CHECK'] = 'READ'
+        imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": target })
+
         return json.dumps(json.dumps(data))
 
     if(request.json['ORDER'] == 'LABEL'):
-        df = pd.read_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', na_rep='')
-        if(DEBUG_MODE == True):
-            pass
-            #print(df)
-        i = df.index[df['FILENAME'] == request.json['FILENAME']].tolist()[0]
-        print(request.json['PARAMETER'],str(request.json['SETVALUE']))
-        if(DEBUG_MODE == True):
-            print(request.json['PARAMETER'],str(request.json['SETVALUE']))
-        df[request.json['PARAMETER']].iloc[i]=str(request.json['SETVALUE'])
+
         if(request.json['PARAMETER'] == 'BBOX_LABEL'):
-            if(df[request.json['PARAMETER']].iloc[i] == ''):
-                df[request.json['PARAMETER']].iloc[i] = '[]'
-            BBOX_LABEL = json.loads(df[request.json['PARAMETER']].iloc[i])
+            BBOX_LABEL = json.loads(request.json['SETVALUE'])
             for EACH_LABEL in BBOX_LABEL:
                 EACH_LABEL['left'] = int(EACH_LABEL['left'] / request.json['RATIO'])
                 EACH_LABEL['top'] = int(EACH_LABEL['top'] / request.json['RATIO'])
                 EACH_LABEL['width'] = int(EACH_LABEL['width'] / request.json['RATIO'])
                 EACH_LABEL['height'] = int(EACH_LABEL['height'] / request.json['RATIO'])
-            df[request.json['PARAMETER']].iloc[i] = json.dumps(BBOX_LABEL)
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL)}})
+        else:
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
+        
         if(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
-            df['TIMESTAMP'].iloc[i] = str(pd.Timestamp('now'))
-        if(DEBUG_MODE == True):
-            pass
-            #print(df)
-        df.to_excel(BASE_DIR+request.json['DATASET']+'.xls', sheet_name='Sheet1', index = False, na_rep='', float_format=None)
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'TIMESTAMP':str(pd.Timestamp('now'))}})
+            print('Confirm Check.')
+            if(not imagedata.find_one({'DATASET_NAME':request.json['DATASET'],'CONFIRM_CHECK':'UNCONFIRM'})):
+                print('Confirm.')
+                dataset.update_one({'NAME':request.json['DATASET']},{ "$set": { "STATUS": "ARCHIVE" } })
+
         return json.dumps('Success')
 
     if(request.json['ORDER'] == 'PREDICTION'):
         target_image = os.path.join(BASE_DIR+request.json['DATASET'],request.json['FILENAME'])
-        img = hanimread(target_image) #img = cv2.imread(target_image) 대체
+        img = hanimread(target_image) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
-        response = requests.post('http://127.0.0.1:5001/api', json=mydata)
+        response = requests.post('http://dentiqub.iptime.org:5102/api', json=mydata)
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['message'])
         return json.dumps(json.loads(response.text)['message'])
 
     if(request.json['ORDER'] == 'START_TRAINING'):
-        response = requests.post('http://127.0.0.1:5002/start')
+        response = requests.post('http://dentiqub.iptime.org:5001/start')
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])
 
     if(request.json['ORDER'] == 'TRAINING_STATUS'):
-        response = requests.post('http://127.0.0.1:5002/api')
+        response = requests.post('http://dentiqub.iptime.org:5001/api')
         if(DEBUG_MODE == True):
             print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])
-
 
     if(request.json['ORDER'] == 'STATISTICS'):
         LABEL_RANK = label_statistics()
         PRECISION_DATA = prediction_statistics()
         return json.dumps({'LABEL_RANK':LABEL_RANK, 'PRECISION_DATA':PRECISION_DATA})
 
+    if(request.json['ORDER'] == 'STATISTICS_DEMO'):
+        LABEL_RANK = label_statistics_demo()
+        PRECISION_DATA = prediction_statistics_demo()
+        print('Sending Complete.')
+        return json.dumps({'LABEL_RANK':LABEL_RANK, 'PRECISION_DATA':PRECISION_DATA})
+
 @app.route('/database/<path:path>')
 def database(path):
     return send_from_directory(BASE_DIR, path) 
 
+@app.route('/thumb/<path:path>')
+def thumb_database(path):
+    return send_from_directory(BASE_DIR, path)
+
 def label_statistics():
-    # 디렉토리 불러오기
-    with open('env.json') as json_file:
-        data = json.load(json_file)
-        BASE_DIR = data['BASE_DIR']
-        
-    # 폴더명 확인
-    folderlist = []
-    for DB_NAME in os.listdir(BASE_DIR):
-        if(os.path.isdir(BASE_DIR+DB_NAME)):
-            if os.path.isfile(BASE_DIR+DB_NAME+'.xls'):
-                folderlist.append(DB_NAME)
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
 
     LABEL_LIST = []
 
-    # 개수 카운팅
-    for DATASET_NAME in folderlist[:]:
-        df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
-        if 'BBOX_LABEL' in df:
-            for i in range(len(df)):
-                if (not df['BBOX_LABEL'].isnull().iloc[i]) and (df['CONFIRM_CHECK'].iloc[i] == 'CONFIRM'):
-                    BBOX_LABEL = json.loads(df['BBOX_LABEL'].iloc[i])
-                    for j in range(len(BBOX_LABEL)):
-                        class_name = str(BBOX_LABEL[j]['label'])
-                        LABEL_LIST.append(class_name)
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if ('BBOX_LABEL' in image):
+            if((image['BBOX_LABEL']) == ''):
+                image['BBOX_LABEL'] = '[]'
+            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+            for j in range(len(BBOX_LABEL)):
+                class_name = str(BBOX_LABEL[j]['label'])
+                LABEL_LIST.append(class_name)
 
     LABEL_COUNTER = collections.Counter(LABEL_LIST)
     LABEL_RANK = []
 
     for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], reverse = True):
         LABEL_RANK.append((key, value))
-    
+
+    return LABEL_RANK
+
+def label_statistics_demo():
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB_20200712"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+
+    LABEL_LIST = []
+
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if ('BBOX_LABEL' in image):
+            if((image['BBOX_LABEL']) == ''):
+                image['BBOX_LABEL'] = '[]'
+            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+            for j in range(len(BBOX_LABEL)):
+                class_name = str(BBOX_LABEL[j]['label'])
+                LABEL_LIST.append(class_name)
+
+    LABEL_COUNTER = collections.Counter(LABEL_LIST)
+    LABEL_RANK = []
+
+    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], reverse = True):
+        LABEL_RANK.append((key, value))
+
     return LABEL_RANK
 
 def prediction_statistics():
-    # 디렉토리 불러오기
-    with open('env.json') as json_file:
-        data = json.load(json_file)
-        BASE_DIR = data['BASE_DIR']
-        
-    # 폴더명 확인
-    folderlist = []
-    for DB_NAME in os.listdir(BASE_DIR):
-        if(os.path.isdir(BASE_DIR+DB_NAME)):
-            if os.path.isfile(BASE_DIR+DB_NAME+'.xls'):
-                folderlist.append(DB_NAME)
+
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
 
     CONFIRM_COUNT = 0
     PREDICT_COUNT = 0
     NO_PREDICT_COUNT = 0
     NOT_CHECKED = 0
 
-    # PRECISION 카운팅
-    for DATASET_NAME in folderlist[:]:
-        df = pd.read_excel(BASE_DIR+DATASET_NAME+'.xls', sheet_name='Sheet1', na_rep='')
-        if ('BBOX_LABEL' in df) and ('PREDICTION_CHECK' in df):
-            for i in range(len(df)):
-                if (df['CONFIRM_CHECK'].iloc[i] == 'CONFIRM'):
-                    CONFIRM_COUNT+=1
-                    if (df['PREDICTION_CHECK'].iloc[i] == 'PREDICT'):
-                        PREDICT_COUNT+=1
-                    if (df['PREDICTION_CHECK'].iloc[i] == 'NO_PREDICT'):
-                        NO_PREDICT_COUNT+=1
-                    if (df['PREDICTION_CHECK'].iloc[i] == ''):
-                        NOT_CHECKED+=1
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        CONFIRM_COUNT+=1
+        if 'PREDICTION_CHECK' in image:
+            if (image['PREDICTION_CHECK'] == 'PREDICT'):
+                PREDICT_COUNT+=1
+            if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
+                NO_PREDICT_COUNT+=1
+            if (image['PREDICTION_CHECK'] == ''):
+                NOT_CHECKED+=1
+        
 
-    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/CONFIRM_COUNT*100)
+    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(PREDICT_COUNT+NO_PREDICT_COUNT+NOT_CHECKED+0.1)*100)
+    CURRENT_DATA_AMOUNT = CONFIRM_COUNT
+    CURRENT_DATE = 'NOW'
+
+    # 디렉토리 불러오기
+    with open('precision_record.json') as json_file:
+        data = json.load(json_file)
+        PRECISION_RECORD = data['PRECISION_RECORD']
+
+    PRECISION_DATA = []
+    for PRECISION in PRECISION_RECORD:
+        PRECISION_DATA.append((PRECISION[0],PRECISION[1], PRECISION[2]))
+    PRECISION_DATA.append((CURRENT_DATE, CURRENT_DATA_AMOUNT, str(CURRENT_PRECISION) + '%'))
+
+    return PRECISION_DATA
+
+
+def prediction_statistics_demo():
+
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB_20200712"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+
+    CONFIRM_COUNT = 0
+    PREDICT_COUNT = 0
+    NO_PREDICT_COUNT = 0
+    NOT_CHECKED = 0
+
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        CONFIRM_COUNT+=1
+        if 'PREDICTION_CHECK' in image:
+            if (image['PREDICTION_CHECK'] == 'PREDICT'):
+                PREDICT_COUNT+=1
+            if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
+                NO_PREDICT_COUNT+=1
+            if (image['PREDICTION_CHECK'] == ''):
+                NOT_CHECKED+=1
+        
+
+    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(PREDICT_COUNT+NO_PREDICT_COUNT+NOT_CHECKED+0.1)*100)
     CURRENT_DATA_AMOUNT = CONFIRM_COUNT
     CURRENT_DATE = 'NOW'
 

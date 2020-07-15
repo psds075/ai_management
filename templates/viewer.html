@@ -339,7 +339,10 @@
     var FILENAME = '';
     var GUIDED_FILENAME = '';
     var DATASET = '{{current_dataset}}';
-    var TAB_STATUS = 'ALL';
+    var TAB_STATUS = 'UNCONFIRM';
+    if('{{archive_check}}' == 'ARCHIVE'){
+      TAB_STATUS = 'ALL';
+    }    
 
     // LOADING ICON
     function loadingStart() {
@@ -648,10 +651,8 @@
     }
 
     function openTab(tabName) {
-      //$('.CURRENT').addClass('READ');
-      //$('.CURRENT').removeClass('CURRENT');
-      $('.DELETE').hide(200);
       if (tabName == 'CONFIRM') {
+        $('.DELETE').hide(200);
         $('.CONFIRM').show(200);
         $('.UNCONFIRM').hide(200);
         $('#CONFIRM_TAB').addClass('w3-grey');
@@ -660,6 +661,7 @@
         TAB_STATUS = 'CONFIRM';
       }
       if (tabName == 'UNCONFIRM') {
+        $('.DELETE').hide(200);
         $('.CONFIRM').hide(200);
         $('.UNCONFIRM').show(200);
         $('#CONFIRM_TAB').removeClass('w3-grey');
@@ -668,6 +670,7 @@
         TAB_STATUS = 'UNCONFIRM';
       }
       if (tabName == 'ALL') {
+        $('.DELETE').show(200);
         $('.CONFIRM').show(200);
         $('.UNCONFIRM').show(200);
         $('#CONFIRM_TAB').removeClass('w3-grey');
@@ -932,7 +935,7 @@
       i++;
     }
     commandLine(DATASET + ' OPEN');
-    openTab('UNCONFIRM');
+    openTab(TAB_STATUS);
 
   </script>
 
