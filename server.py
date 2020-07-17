@@ -20,7 +20,10 @@ def login():
     if request.method == 'POST':
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
             session['logged_in'] = True
-            return redirect(url_for('demo'))
+            if('recent' in session):
+                return redirect(url_for(session['recent']))
+            else:
+                return redirect(url_for('demo'))
     return render_template('login.html')
 
 @app.route('/logout')
@@ -40,13 +43,12 @@ TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OST
 def index():
     return render_template('login.html')
 
-
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
     
     if not session.get('logged_in'):
-        print('test')
+        session['recent'] = 'viewer'
         return redirect(url_for('login'))
 
     # Connection
@@ -106,7 +108,7 @@ def viewer(DATASET_NAME):
 def demo(DATASET_NAME):
     
     if not session.get('logged_in'):
-        print('test')
+        session['recent'] = 'demo'
         return redirect(url_for('login'))
 
     # Connection

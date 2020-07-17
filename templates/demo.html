@@ -154,6 +154,7 @@
   <div class="w3-main" id="page">
     <div id="page1" class="w3-container person" style='margin-left:300px;'>
       <div id="loading_icon" style='display:none'></div>
+      <canvas id="canvas" width=500 height=500></canvas>
       <div id="main_img" style='display:none'>
         <div id="bbox_annotator" style="display:inline-block;"></div>
       </div>
@@ -202,12 +203,11 @@
               </div>
               <br>
               <div id="right_box7" style='text-align:center'>
-                <span id="comments">Comments</span>
-                <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
-                  id="insert_btn">INSERT</a>
+                <span id="comments">예측 확인된 이상소견</span>
               </div>
               <div id="comment_box" style="height:calc(100% - 500px);overflow-y:scroll;width:100%;">
-                <div id='COMMENT_TEXT' style="font-weight:lighter;"></div>
+                <table id="disease_list" class="w3-table-all w3-text-black">
+                </table>
               </div>
               <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
                 style='text-align:left;border: 0px solid black;margin:0px;height:100px;overflow-y:scroll;'>
@@ -317,21 +317,33 @@
     var GUIDED_FILENAME = '';
     var DATASET = '{{current_dataset}}';
     var TAB_STATUS = 'UNCONFIRM';
-    if('{{archive_check}}' == 'ARCHIVE'){
+
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+
+    var canvasOffset = $("#canvas").offset();
+    var offsetX = canvasOffset.left;
+    var offsetY = canvasOffset.top;
+
+    var img = new Image();
+
+    if ('{{archive_check}}' == 'ARCHIVE') {
       TAB_STATUS = 'ALL';
-    }   
+    }
 
     // LOADING ICON
     function loadingStart() {
       $('#loading_icon').show(200);
-      $('#main_img').hide(200);
-      $('#main_input').hide(200);
+      $('#canvas').hide(200);
+      //$('#main_img').hide(200);
+      //$('#main_input').hide(200);
     }
 
     function showPage() {
       $('#loading_icon').hide(200);
-      $('#main_img').show(200);
-      $('#main_input').show(200);
+      $('#canvas').show(200);
+      //$('#main_img').show(200);
+      //$('#main_input').show(200);
     }
 
     // IMAGE LABELER BLOCK
@@ -488,6 +500,8 @@
       }
     }
 
+
+
     //BUTTON CONTROL BLOCK
     function BUTTON_CONROL() {
       //DISEASE LABELING
@@ -534,12 +548,13 @@
         execute();
       });
       $('#RESET_BUTTON').click(function () {
-        annotator.clear_all();
+        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+        $('#disease_list').html('');
         $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
         setTimeout(function () {
           generatePacket('LABEL', 'PREDICTION_CHECK', 'NO_PREDICT');
         }, 300);
-
       });
 
       //BRIGHTNESS CONTROL
@@ -559,6 +574,14 @@
       $('#brightness input').trigger("mouseover");
       $('#contrast input').val(50);
       $('#contrast input').trigger("mouseover");
+
+      var tableRows = document.getElementsByClassName('disease_label');
+      for (var i = 0; i < tableRows.length; i += 1) {
+        tableRows[i].addEventListener('mouseover', function (e) {
+          label_count = $(this).attr('name');
+          pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+        });
+      }
     }
 
     BUTTON_CONROL();
@@ -567,20 +590,19 @@
 
       FILENAME = FILENAME_CURRENT;
       actual_image_width(FILENAME);
-      annotator_stop = true;
-      $('#main_img').css("width", DEVICEWIDTH + 'px');
-      $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
-      $('#img3').attr("width", (DEVICEWIDTH - 648) + "px");
+
+      img.onload = function () {
+        canvas.width = img.width * image_ratio;
+        canvas.height = img.height * image_ratio;
+        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+      }
+      img.src = "/database/" + DATASET + "/" + FILENAME;
+
       $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('CURRENT');
-      $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
-      var img = $('#brightness img');
-      $('#brightness input').val(50);
-      $('#contrast input').val(50);
-      TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + 100 + '%' + ')' });
-      TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + 100 + '%' + ')' });
 
       function execute1() {
         return new Promise(function (resolve) {
@@ -596,6 +618,83 @@
       execute();
     }
 
+    function pointing_label(canvas, ctx, img, pointX, pointY, label_text) {
+      mouseX = pointX;
+      mouseY = pointY;
+      conf_font = "bold 20px Georgia";
+
+      if (mouseY < 100) {
+        if (mouseX < 600) {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 30, mouseY + 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX + 30, mouseY + 35);
+          ctx.fillText(label_text, mouseX + 30, mouseY + 35);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 30, mouseY + 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
+          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
+        }
+      } else {
+        if (mouseX < 600) {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 30, mouseY - 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;          
+          ctx.strokeText(label_text, mouseX + 30, mouseY - 25);
+          ctx.fillText(label_text, mouseX + 30, mouseY - 25);
+        }
+        else {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 30, mouseY - 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
+          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
+        }
+      }
+    }
+
     function sendCompleteLabeling() {
       var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
       sendToServer(parameter);
@@ -605,7 +704,7 @@
     function openTab(tabName) {
       //$('.CURRENT').addClass('READ');
       //$('.CURRENT').removeClass('CURRENT');
-      
+
       if (tabName == 'CONFIRM') {
         $('.DELETE').hide(200);
         $('.CONFIRM').show(200);
@@ -703,7 +802,8 @@
               if (result['REVIEW_CHECK'] == 'UNREAD') {
                 generatePacket('PREDICTION', '', '');
                 $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-              } else {
+              } 
+              else {
                 if (result['PREDICTION_CHECK'] == 'PREDICT') {
                   $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
                 }
@@ -711,24 +811,11 @@
                   $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
                 }
                 setTimeout(function () {
-                  annotator_stop = true;
-                  annotator.clear_all();
                   if (result['BBOX_LABEL'] == '') {
                     result['BBOX_LABEL'] = '[]';
                   }
                   var labels = JSON.parse(result['BBOX_LABEL']);
-                  labels.forEach(function (each_label) {
-                    var rect = {
-                      left: each_label.left * image_ratio,
-                      top: each_label.top * image_ratio,
-                      width: each_label.width * image_ratio,
-                      height: each_label.height * image_ratio
-                    };
-                    rect.label = each_label.label;
-                    annotator.add_entry(rect);
-                  });
-                  annotator_stop = false;
-                  LABEL_ONOFF_CONTROL('ON');
+                  loadPrediction(labels);
                   showPage();
                 }, 100);
               }
@@ -762,21 +849,7 @@
               $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
             }
             if (packet['ORDER'] == 'PREDICTION') {
-              annotator_stop = true;
-              annotator.clear_all();
-              result.forEach(function (each_label) {
-                var rect = {
-                  left: parseInt(each_label.left * image_ratio),
-                  top: parseInt(each_label.top * image_ratio),
-                  width: parseInt(each_label.width * image_ratio),
-                  height: parseInt(each_label.height * image_ratio)
-                };
-                rect.label = each_label.label;
-                annotator.add_entry(rect);
-              });
-              annotator_stop = false;
-              showPage();
-
+              loadPrediction(result);
             }
             if (packet['ORDER'] == 'START_TRAINING') {
               alert(result);
@@ -803,6 +876,52 @@
           }
         });
       });
+    }
+
+    function loadPrediction(result){
+      $('#disease_list').html('');
+      point_array = []
+      function execute1() {
+        return new Promise(function (resolve) {
+          result.forEach(function (each_label, index) {
+            var rect = {
+              left: parseInt(each_label.left * image_ratio),
+              top: parseInt(each_label.top * image_ratio),
+              width: parseInt(each_label.width * image_ratio),
+              height: parseInt(each_label.height * image_ratio)
+            };
+            rect.label = each_label.label;
+            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+            point_array.push(rect);
+            $('#disease_list').append('<tr class="w3-hover-red disease_label" name=' + index + '><td>' + rect.label + '</td></tr>');
+          });
+          resolve(1);
+        })
+      }
+      async function execute() {
+        result = await execute1();
+        var tableRows = document.getElementsByClassName('disease_label');
+        for (var i = 0; i < tableRows.length; i += 1) {
+          tableRows[i].addEventListener('mouseover', function (e) {
+            label_count = $(this).attr('name');
+            rect = point_array[label_count];
+            ctx.fillStyle = "black";
+            ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+            ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+          });
+        }
+        document.getElementById('disease_list').addEventListener('mouseout', function (e) {
+          ctx.fillStyle = "black";
+          ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+          ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+          point_array.forEach(function (rect, index) {
+            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+          });
+        });
+        showPage();
+        }
+      execute();
     }
 
     function generatePacket(ORDER, PARAMETER, SETVALUE) {
