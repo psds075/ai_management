@@ -799,6 +799,9 @@
             console.log(result);
             if (packet['ORDER'] == 'TARGET') {
               result = JSON.parse(result);
+              generatePacket('PREDICTION', '', '');
+              $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+              /*
               if (result['REVIEW_CHECK'] == 'UNREAD') {
                 generatePacket('PREDICTION', '', '');
                 $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
@@ -819,6 +822,7 @@
                   showPage();
                 }, 100);
               }
+              */
               if (result['TMJ_LEFT'] == '') {
                 TMJ_LEFT_BUTTON_CONTROL('NONE');
               } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
