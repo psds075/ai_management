@@ -154,7 +154,7 @@
   <div class="w3-main" id="page">
     <div id="page1" class="w3-container person" style='margin-left:300px;'>
       <div id="loading_icon" style='display:none'></div>
-      <canvas id="canvas" width=500 height=500></canvas>
+      <canvas id="canvas" width=500 height=500 style="display:none"></canvas>
       <div id="main_img" style='display:none'>
         <div id="bbox_annotator" style="display:inline-block;"></div>
       </div>
@@ -905,7 +905,7 @@
           tableRows[i].addEventListener('mouseover', function (e) {
             label_count = $(this).attr('name');
             rect = point_array[label_count];
-            ctx.fillStyle = "black";
+            ctx.fillStyle = "red";
             ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
             ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
             pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
