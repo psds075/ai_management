@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>MEDIPARTNER AI MANAGEMENT</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../static/css/imageviewer.css" type="text/css" />
+<link rel="stylesheet" href="../static/css/style.css" type="text/css">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=RobotoDraft" type="text/css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<script src="../static/js/jquery-1.11.3.min.js"></script>
+<script src="../static/js/imageviewer.js"></script>
+<script src="../static/js/bbox_annotator.js"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
+
+<style>
+  /* Style the search box */
+  #mySearch {
+    width: 100%;
+    font-size: 15px;
+    padding: 5px;
+    border: 1px solid #ddd;
+  }
+
+  /* Center the loader */
+  #loading_icon {
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    z-index: 1;
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+    border: 30px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 30px solid #001f3f;
+    width: 300px;
+    height: 300px;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+  }
+
+  /* Center the loader */
+  #loading_statistics {
+    position: relative;
+    left: 45%;
+    top: 30%;
+    z-index: 1;
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+    border: 30px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 30px solid #001f3f;
+    width: 200px;
+    height: 200px;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+  }
+
+  @-webkit-keyframes spin {
+    0% {
+      -webkit-transform: rotate(0deg);
+    }
+
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<body>
+  <!-- Side Navigation -->
+  <nav class="w3-sidebar w3-bar-block w3-collapse w3-animate-left w3-card" id="mySidebar">
+    <a href="/logout" class="w3-bar-item w3-button w3-large" id="mySidebar2">
+      <img src="../static/src/logo_horizontal.jpg" width=100%>
+    </a>
+    <div>
+      <div class="w3-dropdown-click" style='width:33%'>
+        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">DATASET</button>
+        <div id="DATASET_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
+          style="overflow-y:scroll;height:400px;">
+          {% for dataset in datasetlist %}
+          <a href="#" class="w3-bar-item w3-button"
+            onclick="SHOW_DATASET();SELECT_DATASET('{{dataset['DATASET_NAME']}}');">{{dataset['DATASET_NAME']}}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="w3-dropdown-click" style='width:33%'>
+        <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">ARCHIVE</button>
+        <div id="ARCHIVE_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
+          style="overflow-y:scroll;height:400px;">
+          {% for archive in archivelist %}
+          <a href="#" class="w3-bar-item w3-button"
+            onclick="SHOW_ARCHIVE();SELECT_ARCHIVE('{{archive['DATASET_NAME']}}');">{{archive['DATASET_NAME']}}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <button onclick='sendCompleteLabeling();' class="w3-button w3-black">UNLOAD</button>
+    </div>
+
+    <div class="w3-bar w3-black">
+      <button class="w3-button" id="UNCONFIRM_TAB" onclick="openTab('UNCONFIRM')">UNCONFIRM</button>
+      <button class="w3-button" id="CONFIRM_TAB" onclick="openTab('CONFIRM')">CONFIRM</button>
+      <button class="w3-button w3-grey" id="ALL_TAB" onclick="openTab('ALL')">ALL</button>
+    </div>
+
+    <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
+
+    <div id="Demo1" class="w3-animate-left">
+      {% for data in datalist %}
+      <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
+        text="{{data['FILENAME']}}">
+        <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
+          onclick="openImage('{{data['FILENAME']}}')" class="img_name">
+          <div class="w3-container" style='padding:0px'>
+            <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}}
+                style='height:65px;width:130px;'>
+            </div>
+            <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
+              {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}</div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    <div class=center>
+      <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:"";'>START
+        TRAINING</button>
+      <button id=PROGRESSING_BUTTON class=below_btn onclick="PROGRESSING_BUTTON_CONTROL();" style='display:none;'>
+        <i class="fa fa-spinner fa-spin"></i>
+        PROGRESSING
+        <div class="w3-light-grey" style='float:inline-end'>
+          <div class="w3-blue" style="height:3px;width:{{training_percent}}%;float:inline-end"></div>
+        </div>
+      </button>
+      <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
+        SUMMARY</button>
+    </div>
+  </nav>
+
+  <!-- Main Page -->
+  <div class="w3-main" id="page">
+    <div id="page1" class="w3-container person" style='margin-left:300px;'>
+      <div id="loading_icon" style='display:none'></div>
+      <canvas id="canvas" width=500 height=500 style='display:none'></canvas>
+      <div id="main_input" width=60% style='display:none;overflow-y:scroll;height:250px'>
+        <br>
+      </div>
+      <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
+      <div>
+        <div class="width100">
+          <div class="slidecontainer">
+            <div id="right_box1" style='text-align:left'>
+              <div id="right_box2">
+                <button id='PREDICTION_BUTTON'
+                  class="w3-button w3-grey w3-hover-grey w3-padding-small">PREDICTION</button>
+                <button id='RESET_BUTTON' class="w3-button w3-blue w3-hover-grey w3-padding-small">RESET</button>
+              </div>
+              <div class=''>
+                <div id="right_box4">Brightness</div>
+                <div id='brightness' style='padding-left:20px'>
+                  <input type="range" step="1" min="0" max="100" class="slider" id="myRange">
+                </div>
+              </div>
+              <div class=''>
+                <div id="right_box4">Contrast</div>
+                <div id='contrast' style='padding-left:20px'>
+                  <input type="range" step="1" min="0" max="100" class="slider" id="contraRange">
+                </div>
+              </div>
+              <div id="right_box6">
+                <div class=text_left id="prdiction">Prediction</div>
+                <div class="text_left f_gray">TMJ RIGHT<b id=TMJ_LEFT_SCORE></b></div>
+                <div class="w3-grey">
+                  <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
+                </div>
+                <div class="text_left f_gray">TMJ LEFT<b id=TMJ_RIGHT_SCORE></b></div>
+                <div class="w3-grey">
+                  <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
+                </div>
+                <div class="text_left f_gray">OSTEOPOROSIS<b id=OSTEOPOROSIS_SCORE></b></div>
+                <div class="w3-grey">
+                  <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
+                </div>
+              </div>
+              <br>
+              <div id="right_box7" style='text-align:center'>
+                <span id="comments">예측 확인된 이상소견</span>
+              </div>
+              <div id="comment_box" style="height:calc(100% - 500px);overflow-y:scroll;width:100%;">
+                <table id="disease_list" class="w3-table-all w3-text-black">
+                </table>
+              </div>
+              <div id="CMD_WINDOW" class="w3-panel w3-leftbar w3-dark-grey"
+                style='text-align:left;border: 0px solid black;margin:0px;height:100px;overflow-y:scroll;'>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal INSERT IMAGE -->
+  <div id="id01" class="w3-modal" style="z-index:5">
+    <div class="w3-modal-content w3-animate-zoom">
+      <div class="w3-container w3-padding w3-blue-grey">
+        <span onclick="document.getElementById('id01').style.display='none'"
+          class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
+        <h2 class="w3-blue-grey">Insert New Image</h2>
+      </div>
+      <div class="w3-panel">
+        <label style="border:0px solid red;">Image Lists</label>
+        <form id="FILE_FORM" method="post" enctype="multipart/form-data" action="" style="border:0px solid red;">
+          <input type="file" class="w3-input w3-border w3-margin-bottom" id="FILE_TAG" name="FILE_TAG"
+            style="border:5px solid blue;" multiple>
+          <br>
+        </form>
+        <div class="w3-section" style="border:0px solid red;">
+          <a class="w3-button w3-blue-grey" onclick="document.getElementById('id01').style.display='none'">Cancel
+             <i class="fa fa-remove"></i></a>
+          <a class="w3-button w3-light-grey w3-right"
+            onclick="uploadFile();document.getElementById('id01').style.display='none'">Select  <i
+              class="fa fa-paper-plane"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal COMMENT -->
+  <div id="id02" class="w3-modal" style="z-index:5">
+    <div class="w3-modal-content w3-animate-zoom">
+      <div class="w3-container w3-padding w3-blue-grey">
+        <span onclick="document.getElementById('id02').style.display='none'"
+          class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
+        <h2 class="w3-blue-grey">Insert Comment</h2>
+      </div>
+      <div class="w3-panel">
+        <textarea id="TEXT_AREA" style='width:100%;height:200px;'></textarea>
+        <div class="w3-section">
+          <a class="w3-button w3-blue-grey" onclick="document.getElementById('id02').style.display='none'">Cancel
+             <i class="fa fa-remove"></i></a>
+          <a id='WRITE_BUTTON' class="w3-button w3-light-grey w3-right"
+            onclick="document.getElementById('id02').style.display='none'" ;>Write  <i
+              class="fa fa-paper-plane"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal STATISTICS SUMMARY -->
+  <div id="id03" class="w3-modal" style="z-index:5">
+    <div class="w3-modal-content w3-animate-zoom" style="height:70%;">
+      <div class="w3-container w3-padding w3-blue-grey">
+        <span onclick="document.getElementById('id03').style.display='none'"
+          class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
+        <h2 class="w3-blue-grey">Statistics Summary</h2>
+      </div>
+      <div class="w3-panel" style="overflow-y:scroll;height:calc(100% - 110px);">
+        <div id="loading_statistics" style='display:none'></div>
+        <div id="statistics_contents">
+          <h2>Precision Statistics</h2>
+          <table id='precision_table' class="w3-table-all w3-hoverable">
+            <thead>
+              <tr class="w3-black">
+                <th class="w3-center">학습날짜</th>
+                <th class="w3-center">총 데이터 수</th>
+                <th class="w3-center">Average Precision</th>
+              </tr>
+            </thead>
+            <tr>
+              <td class="w3-center">2020. 05. 26.</td>
+              <td class="w3-center">8000</td>
+              <td class="w3-center">80%</td>
+            </tr>
+          </table>
+          <h2>Label Statistics</h2>
+          <table id='statistics_table' class="w3-table-all w3-hoverable">
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var LABEL_DICT = {{ LABEL_DICT| tojson}};
+    var LABEL_DICT = JSON.parse(LABEL_DICT);
+  </script>
+
+  <script>
+
+    var BODY = document.body, HTML = document.documentElement;
+    var DEVICEHEIGHT = Math.max(BODY.scrollHeight, BODY.offsetHeight, HTML.clientHeight, HTML.scrollHeight, HTML.offsetHeight);
+    var DEVICEWIDTH = Math.max(BODY.scrollWidth, BODY.offsetWidth, HTML.clientWidth, HTML.scrollWidth, HTML.offsetWidth);
+    var image_width = DEVICEWIDTH - 650;
+    var image_ratio = 0;
+
+    var FILENAME = '';
+    var GUIDED_FILENAME = '';
+    var DATASET = '{{current_dataset}}';
+    var TAB_STATUS = 'UNCONFIRM';
+
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+
+    var canvasOffset = $("#canvas").offset();
+    var offsetX = canvasOffset.left;
+    var offsetY = canvasOffset.top;
+
+    var img = new Image();
+
+    if ('{{archive_check}}' == 'ARCHIVE') {
+      TAB_STATUS = 'ALL';
+    }
+
+    // LOADING ICON
+    function loadingStart() {
+      $('#loading_icon').show(200);
+      $('#canvas').hide(200);
+      //$('#main_img').hide(200);
+      //$('#main_input').hide(200);
+    }
+
+    function showPage() {
+      $('#loading_icon').hide(200);
+      $('#canvas').show(200);
+      //$('#main_img').show(200);
+      //$('#main_input').show(200);
+    }
+
+    // IMAGE LABELER BLOCK
+    var annotator;
+    var annotator_stop;
+    $(document).ready(function () {
+      annotator = new BBoxAnnotator({
+        url: "../static/img/Z0001.jpg",
+        input_method: "select",
+        labels: LABEL_DICT,
+        onchange: function (entries) {
+
+        },
+        width: DEVICEWIDTH - 650,
+        height: (DEVICEWIDTH - 650) / 1.9
+      });
+
+      $("#Demo1").click(function (e) {
+        annotator.clear_all();
+      })
+    });
+
+    $('#WRITE_BUTTON').click(function () {
+      var parameter = {};
+      parameter['DATASET'] = DATASET;
+      parameter['ORDER'] = 'LABEL';
+      parameter['FILENAME'] = FILENAME;
+      parameter['PARAMETER'] = 'COMMENT_TEXT';
+      parameter['SETVALUE'] = $('#TEXT_AREA').val();
+      $('#COMMENT_TEXT').html($('#TEXT_AREA').val());
+      sendToServer(parameter);
+    });
+
+    $('#CONFIRM_BUTTON').click(function () {
+      $('#main_img').hide(200);
+      $('#main_input').hide(200);
+      commandLine(FILENAME + ' COMFIRM');
+      generatePacket('LABEL', 'CONFIRM_CHECK', 'CONFIRM');
+      $('.CURRENT').addClass('CONFIRM');
+      $('.CURRENT').addClass('READ');
+      $('.CURRENT').removeClass('UNCONFIRM');
+      $('.CURRENT').removeClass('CURRENT');
+      openTab(TAB_STATUS);
+      if (TAB_STATUS == 'UNCONFIRM') {
+        if ($('.UNCONFIRM').length != 0) {
+          setTimeout(function () {
+            openImage($('.UNCONFIRM')[0].id + '.jpg');
+          }, 300);
+        }
+        else {
+          window.location.href = "/service";
+        }
+      }
+    });
+
+    $('#DELETE_BUTTON').click(function () {
+      var delete_check = confirm("정말로 삭제하시겠습니까?");
+      if (delete_check == true) {
+        $('#main_img').hide(200);
+        $('#main_input').hide(200);
+        commandLine(FILENAME + ' DELETE');
+        generatePacket('LABEL', 'CONFIRM_CHECK', 'DELETE');
+        $('.CURRENT').addClass('DELETE');
+        $('.CURRENT').addClass('READ');
+        $('.CURRENT').removeClass('UNCONFIRM');
+        $('.CURRENT').removeClass('CURRENT');
+        openTab(TAB_STATUS);
+      }
+    });
+
+    var count = 0;
+
+    function TRAINING_BUTTON_CONTROL() {
+      alert('데모에서는 지원하지 않는 기능입니다.');
+    }
+
+    function PROGRESSING_BUTTON_CONTROL() {
+      generatePacket('TRAINING_STATUS', '', '');
+    }
+
+    if ('{{training_status}}' == 'STOP') {
+      $('#TRAINING_BUTTON').css('display', '');
+      $('#PROGRESSING_BUTTON').css('display', 'none');
+    }
+    else {
+      $('#TRAINING_BUTTON').css('display', 'none');
+      $('#PROGRESSING_BUTTON').css('display', '');
+    }
+
+    function SUMMARY_BUTTON_CONTROL() {
+      document.getElementById('id03').style.display = 'block';
+      $('#loading_statistics').show(200);
+      $('#statistics_contents').hide(200);
+      generatePacket('STATISTICS_DEMO', '', '');
+    }
+
+    function TMJ_LEFT_BUTTON_CONTROL(signal) {
+      if (signal == 'NORMAL') {
+        $('#TMJ_LEFT_ABNORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#TMJ_LEFT_NORMAL_BUTTON').attr("class", "w3-button w3-black w3-hover-black w3-padding-small");
+      }
+      if (signal == 'ABNORMAL') {
+        $('#TMJ_LEFT_ABNORMAL_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+        $('#TMJ_LEFT_NORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+      }
+      if (signal == 'NONE') {
+        $('#TMJ_LEFT_ABNORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#TMJ_LEFT_NORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+      }
+    }
+
+    function TMJ_RIGHT_BUTTON_CONTROL(signal) {
+      if (signal == 'NORMAL') {
+        $('#TMJ_RIGHT_ABNORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#TMJ_RIGHT_NORMAL_BUTTON').attr("class", "w3-button w3-black w3-hover-black w3-padding-small");
+      }
+      if (signal == 'ABNORMAL') {
+        $('#TMJ_RIGHT_ABNORMAL_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+        $('#TMJ_RIGHT_NORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+      }
+      if (signal == 'NONE') {
+        $('#TMJ_RIGHT_ABNORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#TMJ_RIGHT_NORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+      }
+    }
+
+    function OSTEOPOROSIS_BUTTON_CONTROL(signal) {
+      if (signal == 'NORMAL') {
+        $('#OSTEOPOROSIS_ABNORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#OSTEOPOROSIS_NORMAL_BUTTON').attr("class", "w3-button w3-black w3-hover-black w3-padding-small");
+      }
+      if (signal == 'ABNORMAL') {
+        $('#OSTEOPOROSIS_ABNORMAL_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+        $('#OSTEOPOROSIS_NORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+      }
+      if (signal == 'NONE') {
+        $('#OSTEOPOROSIS_ABNORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#OSTEOPOROSIS_NORMAL_BUTTON').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+      }
+    }
+
+    function LABEL_ONOFF_CONTROL(signal) {
+      if (signal == 'ON') {
+        $('#labeled_button').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+        $('#normal_button').attr("class", "w3-button w3-grey w3-hover-black w3-padding-small");
+        $('#unlabeled_img').css('display', 'none');
+        $('#main_img').css('display', '');
+      }
+      else {
+        $('#labeled_button').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        $('#normal_button').attr("class", "w3-button w3-black w3-hover-black w3-padding-small");
+        $('#unlabeled_img').css('display', '');
+        $('#main_img').css('display', 'none');
+      }
+    }
+
+
+
+    //BUTTON CONTROL BLOCK
+    function BUTTON_CONROL() {
+      //DISEASE LABELING
+      $('#TMJ_LEFT_NORMAL_BUTTON').click(function () {
+        TMJ_LEFT_BUTTON_CONTROL('NORMAL');
+        generatePacket('LABEL', 'TMJ_LEFT', 0);
+      });
+      $('#TMJ_LEFT_ABNORMAL_BUTTON').click(function () {
+        TMJ_LEFT_BUTTON_CONTROL('ABNORMAL');
+        generatePacket('LABEL', 'TMJ_LEFT', 1);
+      });
+
+      $('#TMJ_RIGHT_NORMAL_BUTTON').click(function () {
+        TMJ_RIGHT_BUTTON_CONTROL('NORMAL');
+        generatePacket('LABEL', 'TMJ_RIGHT', 0);
+      });
+      $('#TMJ_RIGHT_ABNORMAL_BUTTON').click(function () {
+        TMJ_RIGHT_BUTTON_CONTROL('ABNORMAL');
+        generatePacket('LABEL', 'TMJ_RIGHT', 1);
+      });
+
+      $('#OSTEOPOROSIS_NORMAL_BUTTON').click(function () {
+        OSTEOPOROSIS_BUTTON_CONTROL('NORMAL');
+        generatePacket('LABEL', 'OSTEOPOROSIS', 0);
+      });
+      $('#OSTEOPOROSIS_ABNORMAL_BUTTON').click(function () {
+        OSTEOPOROSIS_BUTTON_CONTROL('ABNORMAL');
+        generatePacket('LABEL', 'OSTEOPOROSIS', 1);
+      });
+
+      //PREDICTION RESET BUTTON
+      $('#PREDICTION_BUTTON').click(function () {
+        function execute1() {
+          return new Promise(function (resolve) {
+            loadingStart();
+            $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+            resolve(1);
+          })
+        }
+        async function execute() {
+          result = await execute1();
+          generatePacket('PREDICTION', '', '');
+        }
+        execute();
+      });
+      $('#RESET_BUTTON').click(function () {
+        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+        $('#disease_list').html('');
+        $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        setTimeout(function () {
+          generatePacket('LABEL', 'PREDICTION_CHECK', 'NO_PREDICT');
+        }, 300);
+      });
+
+      //BRIGHTNESS CONTROL
+      $('#brightness input').on("input", function () {
+        var img = $('#brightness img');
+        TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + this.value * 2 + '%' + ')' });
+      });
+
+      //CONTRAST CONTROL
+      $('#contrast input').on("input", function () {
+        var img = $('#contrast img');
+        TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
+      });
+
+      // SET INITIAL BRIGHTNESS CONTRAST
+      $('#brightness input').val(50);
+      $('#brightness input').trigger("mouseover");
+      $('#contrast input').val(50);
+      $('#contrast input').trigger("mouseover");
+
+      var tableRows = document.getElementsByClassName('disease_label');
+      for (var i = 0; i < tableRows.length; i += 1) {
+        tableRows[i].addEventListener('mouseover', function (e) {
+          label_count = $(this).attr('name');
+          pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+        });
+      }
+    }
+
+    BUTTON_CONROL();
+
+    function openImage(FILENAME_CURRENT) {
+
+      FILENAME = FILENAME_CURRENT;
+      actual_image_width(FILENAME);
+
+      img.onload = function () {
+        canvas.width = img.width * image_ratio;
+        canvas.height = img.height * image_ratio;
+        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+      }
+      img.src = "/database/" + DATASET + "/" + FILENAME;
+
+      $('.CURRENT').addClass('READ');
+      $('.CURRENT').removeClass('CURRENT');
+      $('#' + FILENAME.substring(0, FILENAME.length - 4).replace('.','\\.')).addClass('CURRENT');
+      console.log('#' + FILENAME.substring(0, FILENAME.length - 4).replace('.','\\.'));
+      var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
+
+      function execute1() {
+        return new Promise(function (resolve) {
+          loadingStart();
+          resolve(1);
+        })
+      }
+      async function execute() {
+        result = await execute1();
+        sendToServer(parameter);
+        commandLine(FILENAME + ' OPEN');
+      }
+      execute();
+    }
+
+    function pointing_label(canvas, ctx, img, pointX, pointY, label_text) {
+      mouseX = pointX;
+      mouseY = pointY;
+      conf_font = "bold 20px Georgia";
+
+      if (mouseY < 100) {
+        if (mouseX < 600) {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 30, mouseY + 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX + 30, mouseY + 35);
+          ctx.fillText(label_text, mouseX + 30, mouseY + 35);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 30, mouseY + 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
+          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
+        }
+      } else {
+        if (mouseX < 600) {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX + 30, mouseY - 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX + 30, mouseY - 25);
+          ctx.fillText(label_text, mouseX + 30, mouseY - 25);
+        }
+        else {
+          ctx.beginPath();
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.moveTo(mouseX, mouseY);
+          ctx.lineTo(mouseX - 30, mouseY - 30);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
+          ctx.lineWidth = 7;
+          ctx.font = conf_font;
+          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
+          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
+        }
+      }
+    }
+
+    function sendCompleteLabeling() {
+      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
+      sendToServer(parameter);
+      window.location.href = "/service";
+    }
+
+    function openTab(tabName) {
+      //$('.CURRENT').addClass('READ');
+      //$('.CURRENT').removeClass('CURRENT');
+
+      if (tabName == 'CONFIRM') {
+        $('.DELETE').hide(200);
+        $('.CONFIRM').show(200);
+        $('.UNCONFIRM').hide(200);
+        $('#CONFIRM_TAB').addClass('w3-grey');
+        $('#UNCONFIRM_TAB').removeClass('w3-grey');
+        $('#ALL_TAB').removeClass('w3-grey');
+        TAB_STATUS = 'CONFIRM';
+      }
+      if (tabName == 'UNCONFIRM') {
+        $('.DELETE').hide(200);
+        $('.CONFIRM').hide(200);
+        $('.UNCONFIRM').show(200);
+        $('#CONFIRM_TAB').removeClass('w3-grey');
+        $('#UNCONFIRM_TAB').addClass('w3-grey');
+        $('#ALL_TAB').removeClass('w3-grey');
+        TAB_STATUS = 'UNCONFIRM';
+      }
+      if (tabName == 'ALL') {
+        $('.DELETE').show(200);
+        $('.CONFIRM').show(200);
+        $('.UNCONFIRM').show(200);
+        $('#CONFIRM_TAB').removeClass('w3-grey');
+        $('#UNCONFIRM_TAB').removeClass('w3-grey');
+        $('#ALL_TAB').addClass('w3-grey');
+        TAB_STATUS = 'ALL';
+      }
+      searchFilter();
+    }
+
+    function searchFilter() {
+      input = document.getElementById("mySearch");
+      filter = input.value.toUpperCase();
+      demo_tag = document.getElementById("Demo1");
+
+      if (TAB_STATUS == 'CONFIRM') {
+        div_tag = $('.CONFIRM')
+        for (var i = 0; i < div_tag.length; i++) {
+          if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+            div_tag[i].style.display = "";
+          } else {
+            div_tag[i].style.display = "none";
+          }
+        }
+      }
+      if (TAB_STATUS == 'UNCONFIRM') {
+        div_tag = $('.UNCONFIRM')
+        for (var i = 0; i < div_tag.length; i++) {
+          if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+            div_tag[i].style.display = "";
+          } else {
+            div_tag[i].style.display = "none";
+          }
+        }
+      }
+      if (TAB_STATUS == 'ALL') {
+        div_tag = $('.CONFIRM, .UNCONFIRM')
+        for (var i = 0; i < div_tag.length; i++) {
+          if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
+            div_tag[i].style.display = "";
+          } else {
+            div_tag[i].style.display = "none";
+          }
+        }
+      }
+    }
+
+    function actual_image_width(FILENAME) {
+      var dimension, image;
+      image = new Image();
+      image.src = "/database/" + DATASET + "/" + FILENAME;
+      image.onload = function () {
+        dimension = {
+          width: image.naturalWidth,
+          height: image.naturalHeight
+        };
+        image_ratio = image_width / dimension.width;
+      };
+    }
+
+    function sendToServer(packet) {
+      return new Promise(function (resolve, reject) {
+        $.ajax({
+          dataType: "JSON",
+          url: "/_JSON",
+          contentType: "application/json",
+          data: JSON.stringify(packet),
+          type: 'POST',
+          async: true,
+          success: function (result) {
+            if (packet['ORDER'] == 'TARGET') {
+              result = JSON.parse(result);
+              generatePacket('PREDICTION', '', '');
+              $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+              if (result['TMJ_LEFT'] == '') {
+                TMJ_LEFT_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
+                TMJ_LEFT_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                TMJ_LEFT_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['TMJ_RIGHT'] == '') {
+                TMJ_RIGHT_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['TMJ_RIGHT']) > 0.5) {
+                TMJ_RIGHT_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                TMJ_RIGHT_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['OSTEOPOROSIS'] == '') {
+                OSTEOPOROSIS_BUTTON_CONTROL('NONE');
+              } else if (parseInt(result['OSTEOPOROSIS']) > 0.5) {
+                OSTEOPOROSIS_BUTTON_CONTROL('ABNORMAL');
+              } else {
+                OSTEOPOROSIS_BUTTON_CONTROL('NORMAL');
+              }
+              if (result['CONFIRM_CHECK'] == 'CONFIRM') {
+                $('#CONFIRM_BUTTON').attr("class", "w3-button w3-black w3-hover-black");
+              } else {
+                $('#CONFIRM_BUTTON').attr("class", "w3-button w3-grey w3-hover-black");
+              }
+              $('#TEXT_AREA').val(result['COMMENT_TEXT']);
+              $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
+            }
+            if (packet['ORDER'] == 'PREDICTION') {
+              loadPrediction(result);
+            }
+            if (packet['ORDER'] == 'START_TRAINING') {
+              alert(result);
+            }
+            if (packet['ORDER'] == 'TRAINING_STATUS') {
+              alert(result);
+            }
+            if (packet['ORDER'] == 'STATISTICS_DEMO') {
+              $('#loading_statistics').hide(200);
+              $('#statistics_contents').show(200);
+              LABEL_RANK = result['LABEL_RANK']
+              $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
+              for (var i = 0; i < LABEL_RANK.length; i++) {
+                $("#statistics_table").append('<tr><td class="w3-center">' + LABEL_RANK[i][0] + '</td><td class="w3-center">' + LABEL_RANK[i][1] + '</td></tr>');
+              }
+              PRECISION_DATA = result['PRECISION_DATA']
+              $("#precision_table").html('<thead><tr class="w3-black"><th class="w3-center">학습날짜</th><th class="w3-center">총 데이터 수</th><th class="w3-center">Average Precision</th></tr></thead>');
+              for (var i = 0; i < PRECISION_DATA.length; i++) {
+                $("#precision_table").append('<tr><td class="w3-center">' + PRECISION_DATA[i][0] + '</td><td class="w3-center">' + PRECISION_DATA[i][1] + '</td><td class="w3-center">' + PRECISION_DATA[i][2] + '</td></tr>');
+              }
+            }
+            resolve(1);
+          }
+        });
+      });
+    }
+
+    function loadPrediction(result) {
+      $('#disease_list').html('');
+      point_array = []
+      function execute1() {
+        return new Promise(function (resolve) {
+          result.forEach(function (each_label, index) {
+            var rect = {
+              left: parseInt(each_label.left * image_ratio),
+              top: parseInt(each_label.top * image_ratio),
+              width: parseInt(each_label.width * image_ratio),
+              height: parseInt(each_label.height * image_ratio)
+            };
+            rect.label = each_label.label;
+            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+            point_array.push(rect);
+            $('#disease_list').append('<tr class="w3-hover-red disease_label" name=' + index + '><td>' + rect.label + '</td></tr>');
+          });
+          resolve(1);
+        })
+      }
+      async function execute() {
+        result = await execute1();
+        var tableRows = document.getElementsByClassName('disease_label');
+        for (var i = 0; i < tableRows.length; i += 1) {
+          tableRows[i].addEventListener('mouseover', function (e) {
+            label_count = $(this).attr('name');
+            rect = point_array[label_count];
+            ctx.fillStyle = "red";
+            ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+            ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+          });
+        }
+        document.getElementById('disease_list').addEventListener('mouseout', function (e) {
+          ctx.fillStyle = "black";
+          ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+          ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+          point_array.forEach(function (rect, index) {
+            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+          });
+        });
+        showPage();
+      }
+      execute();
+    }
+
+    function generatePacket(ORDER, PARAMETER, SETVALUE) {
+      var parameter = {};
+      parameter['DATASET'] = DATASET;
+      parameter['ORDER'] = ORDER;
+      parameter['FILENAME'] = FILENAME;
+      parameter['PARAMETER'] = PARAMETER;
+      parameter['SETVALUE'] = SETVALUE;
+      sendToServer(parameter);
+    }
+
+    function SHOW_DATASET() {
+      var x = document.getElementById("DATASET_MENU");
+      var y = document.getElementById("ARCHIVE_MENU");
+      if (x.className.indexOf("w3-show") == -1) {
+        x.className += " w3-show";
+      } else {
+        x.className = x.className.replace(" w3-show", "");
+      }
+      if (y.className.indexOf("w3-show")) {
+        y.className = y.className.replace(" w3-show", "");
+      }
+    }
+
+    function SELECT_DATASET(DATASET_NAME) {
+      window.location.href = "/service/" + DATASET_NAME;
+    }
+
+    function SHOW_ARCHIVE() {
+      var x = document.getElementById("ARCHIVE_MENU");
+      var y = document.getElementById("DATASET_MENU");
+      if (x.className.indexOf("w3-show") == -1) {
+        x.className += " w3-show";
+      } else {
+        x.className = x.className.replace(" w3-show", "");
+      }
+      if (y.className.indexOf("w3-show")) {
+        y.className = y.className.replace(" w3-show", "");
+      }
+    }
+
+    function SELECT_ARCHIVE(DATASET_NAME) {
+      window.location.href = "/service/" + DATASET_NAME;
+    }
+
+    // Typewriting Function
+    var i = 0;
+    var speed = 20;
+    var start = false;
+    var elmnt = document.getElementById("CMD_WINDOW");
+    var down = 100;
+
+    function typeController(id, count, txt) {
+      if (count < txt.length) {
+        document.getElementById(id).innerHTML += txt.charAt(count);
+        count++;
+        setTimeout(typeController, speed, id, count, txt);
+        down += 10;
+        elmnt.scrollTop = down;
+      }
+    }
+
+    function commandLine(typing) {
+      var para = document.createElement("clx");
+      para.innerHTML = "<p id=CMD_WINDOW" + i + " style='margin:1px;'></p>";
+      document.getElementById("CMD_WINDOW").appendChild(para);
+      typeController("CMD_WINDOW" + i, 0, typing);
+      i++;
+    }
+    commandLine(DATASET + ' OPEN');
+    openTab(TAB_STATUS);
+
+  </script>
+
+</body>
+
+</html>

@@ -9,21 +9,36 @@ import cv2
 import base64
 import numpy as np
 import pymongo
+from shapely import geometry
+from multiprocessing.pool import ThreadPool
+pool = ThreadPool(processes=2)
 
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
 
-# 일반 로그인 관련 
+# 일반 로그인 관련
 @app.route("/login", methods=['GET', 'POST'])
 def login():
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+    hospitaldata = DENTIQUB["hospitaldata"]
+
     if request.method == 'POST':
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
             session['logged_in'] = True
             if('recent' in session):
                 return redirect(url_for(session['recent']))
             else:
-                return redirect(url_for('demo'))
+                return redirect(url_for('viewer'))
+        elif(hospitaldata.find_one({'ID':request.form['id'], 'PASSWORD':request.form['password']})):
+            session['logged_in'] = True
+            session['hospital'] = hospitaldata.find_one({'ID':request.form['id'], 'PASSWORD':request.form['password']})['NAME']
+            return redirect(url_for('service'))
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -161,6 +176,71 @@ def demo(DATASET_NAME):
         
     return render_template('demo.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
 
+
+@app.route("/service", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
+@app.route("/service/<string:DATASET_NAME>", methods=['GET', 'POST'])
+def service(DATASET_NAME):
+    
+    if not session.get('logged_in'):
+        session['recent'] = 'service'
+        return redirect(url_for('login'))
+    
+    elif not session.get('hospital'):
+        return redirect(url_for('login'))
+
+    hospital = session['hospital']
+    
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+    
+    with open('label_dict.json',encoding = 'utf-8') as json_file:
+        data = json.load(json_file)
+        LABEL_DICT = data['LABEL_DICT']
+
+    response = requests.post('http://dentiqub.iptime.org:5001/api')
+    training_status = json.loads(response.text)['STATUS']
+    if(len(training_status.split(' '))==4):
+        training_percent = training_status.split(' ')[2]
+    else:
+        training_percent = 0
+    datasetlist = []
+    archivelist = []
+
+    for data in dataset.find({hospital:'READ'}):
+        archivelist.append({'DATASET_NAME':data['NAME']})
+
+    for data in dataset.find({hospital:'UNREAD'}):
+        datasetlist.append({'DATASET_NAME':data['NAME']})
+
+    if DATASET_NAME == 'NONE':
+        datalist = []
+        archive_check = 'NONE'
+
+    else:
+        archive_check = dataset.find_one({'NAME':DATASET_NAME})['STATUS']
+        if(len(os.listdir(BASE_DIR+DATASET_NAME)) != imagedata.find({'DATASET_NAME' : DATASET_NAME}).count()):
+            for filename in os.listdir(BASE_DIR+DATASET_NAME):
+                if not imagedata.find_one({'FILENAME':filename}):
+                    imagedata.insert_one({'FILENAME':filename,'DATASET_NAME':DATASET_NAME, 'REVIEW_CHECK': 'UNREAD','CONFIRM_CHECK':'UNCONFIRM'})
+        datalist = []
+        for image in imagedata.find({'DATASET_NAME' : DATASET_NAME, 'HOSPITAL':hospital}):
+            if not 'REVIEW_CHECK' in image:
+                image['REVIEW_CHECK'] = 'UNREAD'
+            if not 'CONFIRM_CHECK' in image:
+                image['CONFIRM_CHECK'] = 'UNCONFIRM'
+            data = {
+                    'FILENAME' : image['FILENAME'],
+                    'REVIEW_CHECK': image['REVIEW_CHECK'],
+                    'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                    }
+            datalist.append(data)
+        
+    return render_template('service.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
+
+
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
 
@@ -230,10 +310,24 @@ def sending_data():
         img = hanimread(target_image) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
-        response = requests.post('http://dentiqub.iptime.org:5102/api', json=mydata)
+
+        result1 = pool.apply_async(request_prediction, (5101, mydata)) 
+        result2 = pool.apply_async(request_prediction, (5102, mydata))
+        boxes = result1.get() + result2.get()
+        #print('pre')
+        boxes = bbox_duplicate_check(boxes)
+        #print('post')
+
+        #response = requests.post('http://dentiqub.iptime.org:5101/api', json=mydata)
+        #boxes1 = json.loads(response.text)['message']
+        #response = requests.post('http://dentiqub.iptime.org:5102/api', json=mydata)
+        #boxes2 = json.loads(response.text)['message']
+        #boxes = bbox_duplicate_check(boxes1+boxes2)
         if(DEBUG_MODE == True):
-            print(json.loads(response.text)['message'])
-        return json.dumps(json.loads(response.text)['message'])
+            #boxes = json.loads(response.text)['message']
+            print(boxes)
+            
+        return json.dumps(boxes)
 
     if(request.json['ORDER'] == 'START_TRAINING'):
         response = requests.post('http://dentiqub.iptime.org:5001/start')
@@ -270,7 +364,6 @@ def label_statistics():
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
 
     LABEL_LIST = []
 
@@ -355,7 +448,6 @@ def prediction_statistics():
 
     return PRECISION_DATA
 
-
 def prediction_statistics_demo():
 
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
@@ -400,6 +492,68 @@ def hanimread(filePath):
     bytes = bytearray(stream.read())
     numpyArray = np.asarray(bytes, dtype=np.uint8)
     return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
+
+def bbox2rect(bbox):
+    top = bbox['top']
+    down = bbox['top'] + bbox['height']
+    left = bbox['left']
+    right = bbox['left'] + bbox['width']
+    return [[left, top], [left, down], [right, down], [right, top]] 
+
+def calculate_cross(box_1, box_2):
+    poly_1 = geometry.Polygon(box_1)
+    poly_2 = geometry.Polygon(box_2)
+    cross_a = poly_1.intersection(poly_2).area / poly_1.area
+    cross_b = poly_1.intersection(poly_2).area / poly_2.area
+    cross = cross_a if cross_a > cross_b else cross_b
+    return cross
+
+def combine_bbox(bbox_1, bbox_2):
+    top_1 = bbox_1['top']
+    down_1 = bbox_1['top'] + bbox_1['height']
+    left_1 = bbox_1['left']
+    right_1 = bbox_1['left'] + bbox_1['width']
+    
+    top_2 = bbox_2['top']
+    down_2 = bbox_2['top'] + bbox_2['height']
+    left_2 = bbox_2['left']
+    right_2 = bbox_2['left'] + bbox_2['width']
+    
+    top = top_1 if top_1 < top_2 else top_2
+    left = left_1 if left_1 < left_2 else left_2
+    down = down_1 if top_1 > top_2 else down_2
+    right = right_1 if right_1 > right_2 else right_2
+    
+    bbox = {'left' : left, 'top' : top, 'width':right-left, 'height':down - top, 'label' : bbox_1['label']}
+    
+    return bbox
+    
+def bbox_duplicate_check(boxes):
+    while(1):
+        if(len(boxes) > 1):
+            check = False
+            for i in range(len(boxes)):
+                if(check):
+                    break
+                for j in range(i+1, len(boxes)):
+                    if(boxes[i]['label'] == boxes[j]['label']):
+                        if(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])) > 0.3):
+                            #print(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])))
+                            boxes.append(combine_bbox(boxes[i], boxes[j]))
+                            del boxes[i], boxes[j]
+                            check = True
+                            break
+        else:
+            break
+        if(check == False):
+            break
+    return boxes
+
+def request_prediction(port, mydata):
+    response = requests.post('http://dentiqub.iptime.org:'+str(port)+'/api', json=mydata)
+    boxes = json.loads(response.text)['message']
+    print(boxes)
+    return boxes
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)

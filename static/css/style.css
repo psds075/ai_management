@@ -247,7 +247,7 @@ input:checked + .slider_switch:before {
   z-index:3;width:320px;border:0px solid red;overflow:hidden;background-color:#475468;
 }
 #mySidebar2{
-  padding:10px;border:0px solid red;color:white;
+  padding:0px;border:0px solid red;color:white;
 }
 #cases_box{
   background-color:#e8e8e8;position:relative;display:block;height:37px;
