@@ -13,6 +13,7 @@
 <script src="../static/js/imageviewer.js"></script>
 <script src="../static/js/bbox_annotator.js"></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
+<script src='https://kit.fontawesome.com/a076d05399.js'></script>
 
 <style>
   /* Style the search box */
@@ -86,9 +87,15 @@
     <a href="/logout" class="w3-bar-item w3-button w3-large" id="mySidebar2">
       <img src="../static/src/logo_horizontal.jpg" width=100%>
     </a>
+    <div class='w3-container w3-blue-grey'>
+      <p><i class="fa fas fa-hospital w3-margin-right w3-large"></i>{{hospital}}
+        <button class="w3-button w3-red w3-hover-grey w3-padding-small w3-small" style='float:right;'
+          onclick='window.location.href = "/logout";'>LOG OUT</button>
+      </p>
+    </div>
     <div>
       <div class="w3-dropdown-click" style='width:33%'>
-        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">DATASET</button>
+        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">UNREAD</button>
         <div id="DATASET_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
           style="overflow-y:scroll;height:400px;">
           {% for dataset in datasetlist %}
@@ -98,7 +105,7 @@
         </div>
       </div>
       <div class="w3-dropdown-click" style='width:33%'>
-        <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">ARCHIVE</button>
+        <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">READ</button>
         <div id="ARCHIVE_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
           style="overflow-y:scroll;height:400px;">
           {% for archive in archivelist %}
@@ -314,10 +321,14 @@
 
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
+    var point_array;
 
     var canvasOffset = $("#canvas").offset();
     var offsetX = canvasOffset.left;
     var offsetY = canvasOffset.top;
+
+    var brightness = 100;
+    var contrast = 100;
 
     var img = new Image();
 
@@ -494,7 +505,17 @@
       }
     }
 
+    function DRAW_IMAGE(){
+      canvas.width = img.width * image_ratio;
+      canvas.height = img.height * image_ratio;
+      ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+      ctx.filter = 'brightness(' + brightness + '%' + ') '+'contrast(' + contrast + '%' + ')';
+      ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+      point_array.forEach(function (rect, index) {
+        pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+      });
 
+    }
 
     //BUTTON CONTROL BLOCK
     function BUTTON_CONROL() {
@@ -553,14 +574,32 @@
 
       //BRIGHTNESS CONTROL
       $('#brightness input').on("input", function () {
-        var img = $('#brightness img');
-        TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + this.value * 2 + '%' + ')' });
+        brightness = this.value * 2;
+        DRAW_IMAGE();
+        /*
+        canvas.width = img.width * image_ratio;
+        canvas.height = img.height * image_ratio;
+        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+        ctx.filter = 'brightness(' + this.value * 2 + '%' + ')';
+        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+        */
+        //var img = $('#brightness img');
+        //TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + this.value * 2 + '%' + ')' });
       });
 
       //CONTRAST CONTROL
       $('#contrast input').on("input", function () {
-        var img = $('#contrast img');
-        TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
+        contrast = this.value * 2;
+        DRAW_IMAGE();
+        /*
+        canvas.width = img.width * image_ratio;
+        canvas.height = img.height * image_ratio;
+        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+        ctx.filter = 'contrast(' + this.value * 2 + '%' + ')';
+        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+        */
+        //var img = $('#contrast img');
+        //TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
       });
 
       // SET INITIAL BRIGHTNESS CONTRAST
@@ -592,11 +631,11 @@
         ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
       }
       img.src = "/database/" + DATASET + "/" + FILENAME;
+      $('#disease_list').html('');
 
       $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('CURRENT');
-      $('#' + FILENAME.substring(0, FILENAME.length - 4).replace('.','\\.')).addClass('CURRENT');
-      console.log('#' + FILENAME.substring(0, FILENAME.length - 4).replace('.','\\.'));
+      $('#' + FILENAME.substring(0, FILENAME.length - 4).replace('.', '\\.')).addClass('CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
 
       function execute1() {

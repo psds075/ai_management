@@ -23,27 +23,24 @@ def login():
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
     hospitaldata = DENTIQUB["hospitaldata"]
 
     if request.method == 'POST':
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
-            session['logged_in'] = True
-            if('recent' in session):
-                return redirect(url_for(session['recent']))
-            else:
-                return redirect(url_for('viewer'))
+            session['NAME'] = 'MANAGER'
+            return redirect(url_for('viewer'))
+        elif(request.form['id']=='demo' and request.form['password'] == 'aiqub'):
+            session['NAME'] = 'DEMO'
+            return redirect(url_for('demo'))
         elif(hospitaldata.find_one({'ID':request.form['id'], 'PASSWORD':request.form['password']})):
-            session['logged_in'] = True
-            session['hospital'] = hospitaldata.find_one({'ID':request.form['id'], 'PASSWORD':request.form['password']})['NAME']
+            session['NAME'] = hospitaldata.find_one({'ID':request.form['id']})['NAME']
             return redirect(url_for('service'))
 
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session['logged_in'] = False
+    session['NAME'] = False
     return redirect(url_for('login'))
 
 with open('env.json') as json_file:
@@ -62,8 +59,7 @@ def index():
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
     
-    if not session.get('logged_in'):
-        session['recent'] = 'viewer'
+    if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
 
     # Connection
@@ -122,8 +118,7 @@ def viewer(DATASET_NAME):
 @app.route("/demo/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def demo(DATASET_NAME):
     
-    if not session.get('logged_in'):
-        session['recent'] = 'demo'
+    if not session['NAME'] == 'DEMO':
         return redirect(url_for('login'))
 
     # Connection
@@ -145,10 +140,10 @@ def demo(DATASET_NAME):
     datasetlist = []
     archivelist = []
 
-    for data in dataset.find({'STATUS':'ARCHIVE'}):
+    for data in dataset.find({'STATUS':'ARCHIVE'}).sort("NAME",pymongo.DESCENDING):
         archivelist.append({'DATASET_NAME':data['NAME']})
 
-    for data in dataset.find({'STATUS':'INSERTED'}):
+    for data in dataset.find({'STATUS':'INSERTED'}).sort("NAME",pymongo.DESCENDING):
         datasetlist.append({'DATASET_NAME':data['NAME']})
 
     if DATASET_NAME == 'NONE':
@@ -181,14 +176,10 @@ def demo(DATASET_NAME):
 @app.route("/service/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def service(DATASET_NAME):
     
-    if not session.get('logged_in'):
-        session['recent'] = 'service'
-        return redirect(url_for('login'))
-    
-    elif not session.get('hospital'):
+    if not session.get('NAME'):
         return redirect(url_for('login'))
 
-    hospital = session['hospital']
+    hospital = session['NAME']
     
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
@@ -209,10 +200,10 @@ def service(DATASET_NAME):
     datasetlist = []
     archivelist = []
 
-    for data in dataset.find({hospital:'READ'}):
+    for data in dataset.find({hospital:'READ'}).sort("NAME",pymongo.DESCENDING):
         archivelist.append({'DATASET_NAME':data['NAME']})
 
-    for data in dataset.find({hospital:'UNREAD'}):
+    for data in dataset.find({hospital:'UNREAD'}).sort("NAME",pymongo.DESCENDING):
         datasetlist.append({'DATASET_NAME':data['NAME']})
 
     if DATASET_NAME == 'NONE':
@@ -238,7 +229,7 @@ def service(DATASET_NAME):
                     }
             datalist.append(data)
         
-    return render_template('service.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
+    return render_template('service.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, hospital = hospital)
 
 
 @app.route("/_JSON", methods=['GET', 'POST'])
@@ -311,20 +302,20 @@ def sending_data():
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
 
+        #병렬 코드
         result1 = pool.apply_async(request_prediction, (5101, mydata)) 
         result2 = pool.apply_async(request_prediction, (5102, mydata))
         boxes = result1.get() + result2.get()
-        #print('pre')
         boxes = bbox_duplicate_check(boxes)
-        #print('post')
 
+        #시퀀셜 코드
         #response = requests.post('http://dentiqub.iptime.org:5101/api', json=mydata)
         #boxes1 = json.loads(response.text)['message']
         #response = requests.post('http://dentiqub.iptime.org:5102/api', json=mydata)
         #boxes2 = json.loads(response.text)['message']
         #boxes = bbox_duplicate_check(boxes1+boxes2)
+
         if(DEBUG_MODE == True):
-            #boxes = json.loads(response.text)['message']
             print(boxes)
             
         return json.dumps(boxes)
