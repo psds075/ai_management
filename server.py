@@ -59,7 +59,7 @@ def index():
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
     
-    if not session['NAME'] == 'MANAGER':
+    if not session.get('NAME') == 'MANAGER':
         return redirect(url_for('login'))
 
     # Connection
