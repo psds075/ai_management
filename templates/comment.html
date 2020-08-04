@@ -12,8 +12,8 @@
 <script src="../static/js/jquery-1.11.3.min.js"></script>
 <script src="../static/js/imageviewer.js"></script>
 <script src="../static/js/bbox_annotator.js"></script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
 <script src='https://kit.fontawesome.com/a076d05399.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
 
 <style>
   /* Style the search box */
@@ -150,7 +150,6 @@
     padding: 5px;
   }
 
-
   @-webkit-keyframes spin {
     0% {
       -webkit-transform: rotate(0deg);
@@ -176,17 +175,11 @@
   <!-- Side Navigation -->
   <nav class="w3-sidebar w3-bar-block w3-collapse w3-animate-left w3-card" id="mySidebar">
     <a href="/logout" class="w3-bar-item w3-button w3-large" id="mySidebar2">
-      <img src="../static/src/logo_horizontal.jpg" width=100%>
+      <img src="../static/src/AI MANAGEMENT LOGO.png" width=100%>
     </a>
-    <div class='w3-container w3-blue-grey'>
-      <p><i class="fa fas fa-hospital w3-margin-right w3-large"></i>{{hospital}}
-        <button class="w3-button w3-red w3-hover-grey w3-padding-small w3-small" style='float:right;'
-          onclick='window.location.href = "/logout";'>LOG OUT</button>
-      </p>
-    </div>
     <div>
-      <div class="w3-dropdown-click" style='width:40%'>
-        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">날짜 선택하기</button>
+      <div class="w3-dropdown-click" style='width:31%'>
+        <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">DATASET</button>
         <div id="DATASET_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
           style="overflow-y:scroll;height:400px;">
           {% for dataset in datasetlist %}
@@ -195,33 +188,48 @@
           {% endfor %}
         </div>
       </div>
+      <div class="w3-dropdown-click" style='width:31%'>
+        <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">ARCHIVE</button>
+        <div id="ARCHIVE_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
+          style="overflow-y:scroll;height:400px;">
+          {% for archive in archivelist %}
+          <a href="#" class="w3-bar-item w3-button"
+            onclick="SHOW_ARCHIVE();SELECT_ARCHIVE('{{archive['DATASET_NAME']}}');">{{archive['DATASET_NAME']}}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <button onclick='sendCompleteLabeling();' class="w3-button w3-blue" style='width:33%'>COMMENT</button>
     </div>
 
     <div class="w3-bar w3-black">
-      <button class="w3-button" id="UNREAD_TAB" onclick="openTab('UNREAD')">UNREAD</button>
-      <button class="w3-button" id="COMMENT_TAB" onclick="openTab('COMMENT')">COMMENT</button>
+      <button class="w3-button" id="COMMENT_TAB" onclick="openTab('COMMENT')">REQUEST</button>
+      <button class="w3-button" id="ANSWER_TAB" onclick="openTab('ANSWER')">ANSWERED</button>
       <button class="w3-button w3-grey" id="ALL_TAB" onclick="openTab('ALL')">ALL</button>
     </div>
 
-    <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
+    <input type="text" id="mySearch" onkeyup="searchFilter();" placeholder="Search.." title="Type in a category">
 
-    <div id="Demo1" class="w3-animate-left" , style="height:calc(100% - (100px + 210px));">
+    <div id="Demo1" class="w3-animate-left">
       {% for data in datalist %}
       <div
-        class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} {{data['DIALOG']}} ARTICLE_LIST w3-display-container"
+        class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} {{data['DIALOG']}} {{data['COMMENT']}} ARTICLE_LIST w3-display-container"
         id="{{data['FILENAME'][:-4]}}" text="{{data['FILENAME']}}">
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
           onclick="openImage('{{data['FILENAME']}}')" class="img_name">
           <div class="w3-container" style='padding:0px'>
-            <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}}
+            <div class="w3-opacity" id="xray"><img src=/database/{{data['DATASET_NAME']}}/{{data['FILENAME']}}
                 style='height:65px;width:130px;'>
             </div>
-            {% if data['NOTI'] == 'HOSPITAL' %}
+            {% if data['NOTI'] == 'MANAGER' %}
             <span class="w3-tag w3-round w3-red w3-border w3-border-white w3-display-bottomright"
               style="margin-bottom:15px">NEW</span>
             {% endif %}
-            <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
-              {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}
+            <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+              <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
+              <br>
+              <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
+              <br>
+              <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
             </div>
           </div>
         </a>
@@ -229,6 +237,15 @@
       {% endfor %}
     </div>
     <div class=center>
+      <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START
+        TRAINING</button>
+      <button id=PROGRESSING_BUTTON class=below_btn onclick="PROGRESSING_BUTTON_CONTROL();" style='display:none;'>
+        <i class="fa fa-spinner fa-spin"></i>
+        PROGRESSING
+        <div class="w3-light-grey" style='float:inline-end'>
+          <div class="w3-blue" style="height:3px;width:{{training_percent}}%;float:inline-end"></div>
+        </div>
+      </button>
       <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
         SUMMARY</button>
     </div>
@@ -238,9 +255,37 @@
   <div class="w3-main" id="page">
     <div id="page1" class="w3-container person" style='margin-left:300px;'>
       <div id="loading_icon" style='display:none'></div>
-      <canvas id="canvas" width=500 height=500 style='display:none'></canvas>
+      <div id="main_img" style='display:none'>
+        <div id="bbox_annotator" style="display:inline-block;"></div>
+      </div>
+      <div id="unlabeled_img" style='display:none'>
+        <img src="" id=img3 width=60%>
+      </div>
       <div id="main_input" width=60% style='display:none;overflow-y:scroll;height:250px'>
         <br>
+        <p id='TMJ_RADIOBUTTON' class='w3-text-white'>
+          TMJ DISORDER RIGHT :
+          <button id=TMJ_RIGHT_NORMAL_BUTTON class="w3-button w3-grey w3-hover-black w3-padding-small">Normal</button>
+          <button id=TMJ_RIGHT_ABNORMAL_BUTTON class="w3-button w3-grey w3-hover-red w3-padding-small">Abnormal</button>
+        </p>
+        <p id='TMJ_RADIOBUTTON' class='w3-text-white'>
+          TMJ DISORDER LEFT :
+          <button id=TMJ_LEFT_NORMAL_BUTTON class="w3-button w3-grey w3-hover-black w3-padding-small">Normal</button>
+          <button id=TMJ_LEFT_ABNORMAL_BUTTON class="w3-button w3-grey w3-hover-red w3-padding-small">Abnormal</button>
+        </p>
+        <p id='OSTEOPOROSIS_RADIOBUTTON' class=w3-text-white>
+          OSTEOPOROSIS :
+          <button id=OSTEOPOROSIS_NORMAL_BUTTON
+            class="w3-button w3-grey w3-hover-black w3-padding-small">Normal</button>
+          <button id=OSTEOPOROSIS_ABNORMAL_BUTTON
+            class="w3-button w3-grey w3-hover-red w3-padding-small">Abnormal</button>
+        </p>
+        <br>
+        <p>
+          <button class="w3-button w3-grey w3-hover-black" id="CONFIRM_BUTTON">CONFIRM</button>
+          <button class="w3-button w3-red w3-hover-grey w3-right" style="margin-right:650px"
+            id="DELETE_BUTTON">DELETE</button>
+        </p>
       </div>
       <div id="annotation_data" name="annotation" rows="30" cols="50" style="display:none"></div>
       <div>
@@ -280,67 +325,22 @@
                 </div>
               </div>
               <br>
-              <div id="right_box7" style='text-align:center'>
-                <span style="color:black;padding:2px;display:inline-block;">예측 이상소견</span>
+              <div id="right_box7" style='text-align:center' class='w3-white'>
+                <span id="comments">Comments</span>
+                <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
+                  id="insert_btn">INSERT</a>
               </div>
               <div style="height:calc(100% - 500px);overflow-y:scroll;width:100%;text-align:left;padding:10px;">
                 <table id="disease_list" class="w3-table-all w3-text-black">
                 </table>
               </div>
               <button class="QC_open-button w3-padding-small w3-blue" style="font-size:16px;" onclick="openChat();">판독
-                문의하기</button>
+                답변하기</button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Modal INSERT IMAGE -->
-  <div id="id01" class="w3-modal" style="z-index:5">
-    <div class="w3-modal-content w3-animate-zoom">
-      <div class="w3-container w3-padding w3-blue-grey">
-        <span onclick="document.getElementById('id01').style.display='none'"
-          class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
-        <h2 class="w3-blue-grey">Insert New Image</h2>
-      </div>
-      <div class="w3-panel">
-        <label style="border:0px solid red;">Image Lists</label>
-        <form id="FILE_FORM" method="post" enctype="multipart/form-data" action="" style="border:0px solid red;">
-          <input type="file" class="w3-input w3-border w3-margin-bottom" id="FILE_TAG" name="FILE_TAG"
-            style="border:5px solid blue;" multiple>
-          <br>
-        </form>
-        <div class="w3-section" style="border:0px solid red;">
-          <a class="w3-button w3-blue-grey" onclick="document.getElementById('id01').style.display='none'">Cancel
-             <i class="fa fa-remove"></i></a>
-          <a class="w3-button w3-light-grey w3-right"
-            onclick="uploadFile();document.getElementById('id01').style.display='none'">Select  <i
-              class="fa fa-paper-plane"></i></a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Inquiry Box -->
-  <div class="QC_chat-popup w3-white" id="QC_chatform">
-    <form class="QC_form-container">
-      <h3>판독결과 문의하기</h3>
-      <p>
-        <input class="w3-check" type="checkbox" value="판독 결과가 이상합니다.">
-        <label>판독 결과가 이상합니다.</label>
-      </p>
-      <p>
-        <input class="w3-check" type="checkbox" value="상세 판독 결과를 요청드립니다.">
-        <label>상세 판독 결과를 요청드립니다.</label>
-      </p>
-
-      <label for="msg"><b></b></label>
-      <textarea id='QC_inquire_text' placeholder="필요한 경우 상세내용을 남겨주세요." name="msg" required></textarea>
-
-      <button type="button" class="btn" onclick="sendInquire();">Send</button>
-      <button type="button" class="btn cancel" onclick="closeInquire();">Close</button>
-    </form>
   </div>
 
   <!-- Modal Chat Box -->
@@ -386,7 +386,7 @@
       </div>
 
       <div class='w3-bar'>
-        <input class="w3-input w3-border w3-margin-bottom" name="first" type="text" id="QC_chat_text"
+        <input class="w3-input w3-border w3-margin-bottom" name="first" type="text" id="QC_chat_input"
           autocomplete="off">
         <button type="button" class="w3-button w3-blue" style="width:50%" onclick="sendChat();">Send</button>
         <button type="button" class="w3-button w3-red" style='float:right;width:50%;'
@@ -394,6 +394,53 @@
       </div>
 
     </form>
+  </div>
+
+  <!-- Modal INSERT IMAGE -->
+  <div id="id01" class="w3-modal" style="z-index:5">
+    <div class="w3-modal-content w3-animate-zoom">
+      <div class="w3-container w3-padding w3-blue-grey">
+        <span onclick="document.getElementById('id01').style.display='none'"
+          class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
+        <h2 class="w3-blue-grey">Insert New Image</h2>
+      </div>
+      <div class="w3-panel">
+        <label style="border:0px solid red;">Image Lists</label>
+        <form id="FILE_FORM" method="post" enctype="multipart/form-data" action="" style="border:0px solid red;">
+          <input type="file" class="w3-input w3-border w3-margin-bottom" id="FILE_TAG" name="FILE_TAG"
+            style="border:5px solid blue;" multiple>
+          <br>
+        </form>
+        <div class="w3-section" style="border:0px solid red;">
+          <a class="w3-button w3-blue-grey" onclick="document.getElementById('id01').style.display='none'">Cancel
+             <i class="fa fa-remove"></i></a>
+          <a class="w3-button w3-light-grey w3-right"
+            onclick="uploadFile();document.getElementById('id01').style.display='none'">Select  <i
+              class="fa fa-paper-plane"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal COMMENT -->
+  <div id="id02" class="w3-modal" style="z-index:5">
+    <div class="w3-modal-content w3-animate-zoom">
+      <div class="w3-container w3-padding w3-blue-grey">
+        <span onclick="document.getElementById('id02').style.display='none'"
+          class="w3-button w3-blue-grey w3-right w3-xxlarge"><i class="fa fa-remove"></i></span>
+        <h2 class="w3-blue-grey">Insert Comment</h2>
+      </div>
+      <div class="w3-panel">
+        <textarea id="TEXT_AREA" style='width:100%;height:200px;'></textarea>
+        <div class="w3-section">
+          <a class="w3-button w3-blue-grey" onclick="document.getElementById('id02').style.display='none'">Cancel
+             <i class="fa fa-remove"></i></a>
+          <a id='WRITE_BUTTON' class="w3-button w3-light-grey w3-right"
+            onclick="document.getElementById('id02').style.display='none'" ;>Write  <i
+              class="fa fa-paper-plane"></i></a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal STATISTICS SUMMARY -->
@@ -446,34 +493,19 @@
     var FILENAME = '';
     var GUIDED_FILENAME = '';
     var DATASET = '{{current_dataset}}';
-    var TAB_STATUS = 'ALL';
-
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-    var point_array;
-
-    var canvasOffset = $("#canvas").offset();
-    var offsetX = canvasOffset.left;
-    var offsetY = canvasOffset.top;
-
-    var brightness = 100;
-    var contrast = 100;
-
-    var img = new Image();
+    var TAB_STATUS = 'COMMENT';
 
     // LOADING ICON
     function loadingStart() {
       $('#loading_icon').show(200);
-      $('#canvas').hide(200);
-      //$('#main_img').hide(200);
-      //$('#main_input').hide(200);
+      $('#main_img').hide(200);
+      $('#main_input').hide(200);
     }
 
     function showPage() {
       $('#loading_icon').hide(200);
-      $('#canvas').show(200);
-      //$('#main_img').show(200);
-      //$('#main_input').show(200);
+      $('#main_img').show(200);
+      $('#main_input').show(200);
     }
 
     // Chat Enter시 Submit 방지
@@ -486,14 +518,13 @@
         }
       }
     });
-    var inputChat = document.getElementById("QC_chat_text");
+    var inputChat = document.getElementById("QC_chat_input");
     inputChat.addEventListener("keyup", function (event) {
       if (event.keyCode === 13) {
         event.preventDefault();
         sendChat();
       }
     });
-
 
     // IMAGE LABELER BLOCK
     var annotator;
@@ -504,7 +535,20 @@
         input_method: "select",
         labels: LABEL_DICT,
         onchange: function (entries) {
-
+          if (annotator_stop == false) {
+            var parameter = {};
+            parameter['DATASET'] = DATASET;
+            parameter['ORDER'] = 'LABEL';
+            parameter['FILENAME'] = FILENAME;
+            parameter['PARAMETER'] = 'BBOX_LABEL';
+            parameter['SETVALUE'] = JSON.stringify(entries);
+            parameter['RATIO'] = image_ratio;
+            sendToServer(parameter);
+            $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+            setTimeout(function () {
+              generatePacket('LABEL', 'PREDICTION_CHECK', 'NO_PREDICT');
+            }, 300);
+          }
         },
         width: DEVICEWIDTH - 650,
         height: (DEVICEWIDTH - 650) / 1.9
@@ -513,6 +557,17 @@
       $("#Demo1").click(function (e) {
         annotator.clear_all();
       })
+    });
+
+    $('#WRITE_BUTTON').click(function () {
+      var parameter = {};
+      parameter['DATASET'] = DATASET;
+      parameter['ORDER'] = 'LABEL';
+      parameter['FILENAME'] = FILENAME;
+      parameter['PARAMETER'] = 'COMMENT_TEXT';
+      parameter['SETVALUE'] = $('#TEXT_AREA').val();
+      $('#COMMENT_TEXT').html($('#TEXT_AREA').val());
+      sendToServer(parameter);
     });
 
     $('#CONFIRM_BUTTON').click(function () {
@@ -524,16 +579,6 @@
       $('.CURRENT').removeClass('UNCONFIRM');
       $('.CURRENT').removeClass('CURRENT');
       openTab(TAB_STATUS);
-      if (TAB_STATUS == 'UNCONFIRM') {
-        if ($('.UNCONFIRM').length != 0) {
-          setTimeout(function () {
-            openImage($('.UNCONFIRM')[0].id + '.jpg');
-          }, 300);
-        }
-        else {
-          window.location.href = "/service";
-        }
-      }
     });
 
     $('#DELETE_BUTTON').click(function () {
@@ -553,7 +598,11 @@
     var count = 0;
 
     function TRAINING_BUTTON_CONTROL() {
-      alert('데모에서는 지원하지 않는 기능입니다.');
+      var training_check = confirm("TRAINING 하시겠습니까?");
+      if (training_check == true) {
+        generatePacket('START_TRAINING', '', '');
+        window.location.reload();
+      }
     }
 
     function PROGRESSING_BUTTON_CONTROL() {
@@ -573,7 +622,7 @@
       document.getElementById('id03').style.display = 'block';
       $('#loading_statistics').show(200);
       $('#statistics_contents').hide(200);
-      generatePacket('STATISTICS_DEMO', '', '');
+      generatePacket('STATISTICS', '', '');
     }
 
     function TMJ_LEFT_BUTTON_CONTROL(signal) {
@@ -636,18 +685,6 @@
       }
     }
 
-    function DRAW_IMAGE() {
-      canvas.width = img.width * image_ratio;
-      canvas.height = img.height * image_ratio;
-      ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-      ctx.filter = 'brightness(' + brightness + '%' + ') ' + 'contrast(' + contrast + '%' + ')';
-      ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-      point_array.forEach(function (rect, index) {
-        pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
-      });
-
-    }
-
     //BUTTON CONTROL BLOCK
     function BUTTON_CONROL() {
       //DISEASE LABELING
@@ -694,43 +731,32 @@
         execute();
       });
       $('#RESET_BUTTON').click(function () {
-        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-        $('#disease_list').html('');
+        annotator.clear_all();
         $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+        var parameter = {};
+        parameter['DATASET'] = DATASET;
+        parameter['ORDER'] = 'LABEL';
+        parameter['FILENAME'] = FILENAME;
+        parameter['PARAMETER'] = 'BBOX_LABEL';
+        parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+        parameter['RATIO'] = image_ratio;
+        sendToServer(parameter);
         setTimeout(function () {
           generatePacket('LABEL', 'PREDICTION_CHECK', 'NO_PREDICT');
         }, 300);
+
       });
 
       //BRIGHTNESS CONTROL
       $('#brightness input').on("input", function () {
-        brightness = this.value * 2;
-        DRAW_IMAGE();
-        /*
-        canvas.width = img.width * image_ratio;
-        canvas.height = img.height * image_ratio;
-        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-        ctx.filter = 'brightness(' + this.value * 2 + '%' + ')';
-        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-        */
-        //var img = $('#brightness img');
-        //TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + this.value * 2 + '%' + ')' });
+        var img = $('#brightness img');
+        TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + this.value * 2 + '%' + ')' });
       });
 
       //CONTRAST CONTROL
       $('#contrast input').on("input", function () {
-        contrast = this.value * 2;
-        DRAW_IMAGE();
-        /*
-        canvas.width = img.width * image_ratio;
-        canvas.height = img.height * image_ratio;
-        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-        ctx.filter = 'contrast(' + this.value * 2 + '%' + ')';
-        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-        */
-        //var img = $('#contrast img');
-        //TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
+        var img = $('#contrast img');
+        TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
       });
 
       // SET INITIAL BRIGHTNESS CONTRAST
@@ -738,14 +764,6 @@
       $('#brightness input').trigger("mouseover");
       $('#contrast input').val(50);
       $('#contrast input').trigger("mouseover");
-
-      var tableRows = document.getElementsByClassName('disease_label');
-      for (var i = 0; i < tableRows.length; i += 1) {
-        tableRows[i].addEventListener('mouseover', function (e) {
-          label_count = $(this).attr('name');
-          pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
-        });
-      }
     }
 
     BUTTON_CONROL();
@@ -753,21 +771,22 @@
     function openImage(FILENAME_CURRENT) {
 
       FILENAME = FILENAME_CURRENT;
+      DATASET = FILENAME_CURRENT.slice(0, 8);
       actual_image_width(FILENAME);
-
-      img.onload = function () {
-        canvas.width = img.width * image_ratio;
-        canvas.height = img.height * image_ratio;
-        ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-        ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-      }
-      img.src = "/database/" + DATASET + "/" + FILENAME;
-      $('#disease_list').html('');
-
+      annotator_stop = true;
+      $('#main_img').css("width", DEVICEWIDTH + 'px');
+      $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
+      $('#img3').attr("width", (DEVICEWIDTH - 648) + "px");
       $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('CURRENT');
-      $('#' + FILENAME.substring(0, FILENAME.length - 4).replace('.', '\\.')).addClass('CURRENT');
+      $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
+      $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
       var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
+      var img = $('#brightness img');
+      $('#brightness input').val(50);
+      $('#contrast input').val(50);
+      TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + 100 + '%' + ')' });
+      TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + 100 + '%' + ')' });
 
       function execute1() {
         return new Promise(function (resolve) {
@@ -782,132 +801,44 @@
       execute();
     }
 
-    function pointing_label(canvas, ctx, img, pointX, pointY, label_text) {
-      mouseX = pointX;
-      mouseY = pointY;
-      conf_font = "bold 20px Georgia";
-
-      if (mouseY < 100) {
-        if (mouseX < 600) {
-          ctx.beginPath();
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY + 15);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 15, mouseY);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 30, mouseY + 30);
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "white";
-          ctx.stroke();
-
-          ctx.lineWidth = 7;
-          ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + 30, mouseY + 35);
-          ctx.fillText(label_text, mouseX + 30, mouseY + 35);
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY + 15);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 15, mouseY);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 30, mouseY + 30);
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "white";
-          ctx.stroke();
-
-          ctx.lineWidth = 7;
-          ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
-          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
-        }
-      } else {
-        if (mouseX < 600) {
-          ctx.beginPath();
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY - 15);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 15, mouseY);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 30, mouseY - 30);
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "white";
-          ctx.stroke();
-
-          ctx.lineWidth = 7;
-          ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + 30, mouseY - 25);
-          ctx.fillText(label_text, mouseX + 30, mouseY - 25);
-        }
-        else {
-          ctx.beginPath();
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY - 15);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 15, mouseY);
-          ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 30, mouseY - 30);
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "white";
-          ctx.stroke();
-
-          ctx.lineWidth = 7;
-          ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
-          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
-        }
-      }
-    }
-
-    function sendCompleteLabeling() {
-      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
-      sendToServer(parameter);
-      window.location.href = "/service";
-    }
-
     function openTab(tabName) {
-      //$('.CURRENT').addClass('READ');
-      //$('.CURRENT').removeClass('CURRENT');
-
       if (tabName == 'COMMENT') {
         $('.DELETE').hide(200);
-        $('.NOCOMMENT').hide(200);
+        $('.UNCOMMENT').hide(200);
         $('.COMMENT').show(200);
+        $('#ANSWER_TAB').removeClass('w3-grey');
         $('#COMMENT_TAB').addClass('w3-grey');
-        $('#UNREAD_TAB').removeClass('w3-grey');
         $('#ALL_TAB').removeClass('w3-grey');
         TAB_STATUS = 'COMMENT';
       }
-      if (tabName == 'UNREAD') {
+      if (tabName == 'ANSWER') {
         $('.DELETE').hide(200);
-        $('.READ').hide(200);
-        $('.UNREAD').show(200);
+        $('.UNCOMMENT').show(200);
+        $('.COMMENT').hide(200);
         $('#COMMENT_TAB').removeClass('w3-grey');
-        $('#UNREAD_TAB').addClass('w3-grey');
+        $('#ANSWER_TAB').addClass('w3-grey');
         $('#ALL_TAB').removeClass('w3-grey');
-        TAB_STATUS = 'UNREAD';
+        TAB_STATUS = 'ANSWER';
       }
       if (tabName == 'ALL') {
         $('.DELETE').show(200);
-        $('.NOCOMMENT').show(200);
-        $('.READ').show(200);
+        $('.UNCOMMENT').show(200);
+        $('.COMMENT').show(200);
         $('#COMMENT_TAB').removeClass('w3-grey');
-        $('#UNREAD_TAB').removeClass('w3-grey');
+        $('#ANSWER_TAB').removeClass('w3-grey');
         $('#ALL_TAB').addClass('w3-grey');
         TAB_STATUS = 'ALL';
       }
       searchFilter();
     }
 
-
-
     function searchFilter() {
       input = document.getElementById("mySearch");
       filter = input.value.toUpperCase();
-      demo_tag = document.getElementById("Demo1");
 
-      if (TAB_STATUS == 'CONFIRM') {
-        div_tag = $('.CONFIRM')
+      console.log(TAB_STATUS);
+      if (TAB_STATUS == 'COMMENT') {
+        div_tag = $('.COMMENT')
         for (var i = 0; i < div_tag.length; i++) {
           if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
             div_tag[i].style.display = "";
@@ -916,8 +847,8 @@
           }
         }
       }
-      if (TAB_STATUS == 'UNCONFIRM') {
-        div_tag = $('.UNCONFIRM')
+      if (TAB_STATUS == 'ANSWER') {
+        div_tag = $('.UNCOMMENT')
         for (var i = 0; i < div_tag.length; i++) {
           if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
             div_tag[i].style.display = "";
@@ -927,7 +858,7 @@
         }
       }
       if (TAB_STATUS == 'ALL') {
-        div_tag = $('.CONFIRM, .UNCONFIRM')
+        div_tag = $('.COMMENT, .UNCOMMENT')
         for (var i = 0; i < div_tag.length; i++) {
           if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
             div_tag[i].style.display = "";
@@ -952,6 +883,7 @@
     }
 
     function sendToServer(packet) {
+      console.log(packet);
       return new Promise(function (resolve, reject) {
         $.ajax({
           dataType: "JSON",
@@ -963,6 +895,7 @@
           success: function (result) {
             if (packet['ORDER'] == 'REFLASH') {
               result = JSON.parse(result);
+              console.log(result['DIALOG']);
               $('#QC_CHAT_TEXT').html('<div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px"><img src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;"><p style="margin-top: 0px;margin-right: 80px;"><b>MANAGER</b></p><p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">안녕하세요. 판독 관련 문의사항을 남겨주시면 조속히 답변드리겠습니다.</p><span class="time-left"></span></div>');
               $.each(result['DIALOG'], function (index, value) {
                 if (value[0] == 'MANAGER') {
@@ -975,8 +908,38 @@
             }
             if (packet['ORDER'] == 'TARGET') {
               result = JSON.parse(result);
-              generatePacket('PREDICTION', '', '');
-              $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+              if (result['REVIEW_CHECK'] == 'UNREAD') {
+                generatePacket('PREDICTION', '', '');
+                $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+              } else {
+                if (result['PREDICTION_CHECK'] == 'PREDICT') {
+                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
+                }
+                else {
+                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
+                }
+                setTimeout(function () {
+                  annotator_stop = true;
+                  annotator.clear_all();
+                  if (result['BBOX_LABEL'] == '') {
+                    result['BBOX_LABEL'] = '[]';
+                  }
+                  var labels = JSON.parse(result['BBOX_LABEL']);
+                  labels.forEach(function (each_label) {
+                    var rect = {
+                      left: each_label.left * image_ratio,
+                      top: each_label.top * image_ratio,
+                      width: each_label.width * image_ratio,
+                      height: each_label.height * image_ratio
+                    };
+                    rect.label = each_label.label;
+                    annotator.add_entry(rect);
+                  });
+                  annotator_stop = false;
+                  LABEL_ONOFF_CONTROL('ON');
+                  showPage();
+                }, 100);
+              }
               if (result['TMJ_LEFT'] == '') {
                 TMJ_LEFT_BUTTON_CONTROL('NONE');
               } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
@@ -1003,9 +966,40 @@
               } else {
                 $('#CONFIRM_BUTTON').attr("class", "w3-button w3-grey w3-hover-black");
               }
+              $('#TEXT_AREA').val(result['COMMENT_TEXT']);
+              $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
             }
             if (packet['ORDER'] == 'PREDICTION') {
-              loadPrediction(result);
+              annotator_stop = true;
+              annotator.clear_all();
+              result.forEach(function (each_label) {
+                var rect = {
+                  left: parseInt(each_label.left * image_ratio),
+                  top: parseInt(each_label.top * image_ratio),
+                  width: parseInt(each_label.width * image_ratio),
+                  height: parseInt(each_label.height * image_ratio)
+                };
+                rect.label = each_label.label;
+                annotator.add_entry(rect);
+              });
+              annotator_stop = false;
+              showPage();
+
+
+              var parameter = {};
+              parameter['DATASET'] = DATASET;
+              parameter['ORDER'] = 'LABEL';
+              parameter['FILENAME'] = FILENAME;
+              parameter['PARAMETER'] = 'BBOX_LABEL';
+              parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+              parameter['RATIO'] = image_ratio;
+
+              async function execute() {
+                result = await sendToServer(parameter);
+                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
+              }
+              execute();
+
             }
             if (packet['ORDER'] == 'START_TRAINING') {
               alert(result);
@@ -1013,9 +1007,10 @@
             if (packet['ORDER'] == 'TRAINING_STATUS') {
               alert(result);
             }
-            if (packet['ORDER'] == 'STATISTICS_DEMO') {
+            if (packet['ORDER'] == 'STATISTICS') {
               $('#loading_statistics').hide(200);
               $('#statistics_contents').show(200);
+              console.log(result);
               LABEL_RANK = result['LABEL_RANK']
               $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
               for (var i = 0; i < LABEL_RANK.length; i++) {
@@ -1033,52 +1028,6 @@
       });
     }
 
-    function loadPrediction(result) {
-      $('#disease_list').html('');
-      point_array = []
-      function execute1() {
-        return new Promise(function (resolve) {
-          result.forEach(function (each_label, index) {
-            var rect = {
-              left: parseInt(each_label.left * image_ratio),
-              top: parseInt(each_label.top * image_ratio),
-              width: parseInt(each_label.width * image_ratio),
-              height: parseInt(each_label.height * image_ratio)
-            };
-            rect.label = each_label.label;
-            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
-            point_array.push(rect);
-            $('#disease_list').append('<tr class="w3-hover-red disease_label" name=' + index + '><td>' + rect.label + '</td></tr>');
-          });
-          resolve(1);
-        })
-      }
-      async function execute() {
-        result = await execute1();
-        var tableRows = document.getElementsByClassName('disease_label');
-        for (var i = 0; i < tableRows.length; i += 1) {
-          tableRows[i].addEventListener('mouseover', function (e) {
-            label_count = $(this).attr('name');
-            rect = point_array[label_count];
-            ctx.fillStyle = "red";
-            ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-            ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
-          });
-        }
-        document.getElementById('disease_list').addEventListener('mouseout', function (e) {
-          ctx.fillStyle = "black";
-          ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
-          ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
-          point_array.forEach(function (rect, index) {
-            pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
-          });
-        });
-        showPage();
-      }
-      execute();
-    }
-
     function generatePacket(ORDER, PARAMETER, SETVALUE) {
       var parameter = {};
       parameter['DATASET'] = DATASET;
@@ -1086,62 +1035,56 @@
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = PARAMETER;
       parameter['SETVALUE'] = SETVALUE;
-      parameter['ID'] = '{{hospital}}';
+      parameter['ID'] = 'MANAGER';
       sendToServer(parameter);
     }
 
     function SHOW_DATASET() {
       var x = document.getElementById("DATASET_MENU");
+      var y = document.getElementById("ARCHIVE_MENU");
       if (x.className.indexOf("w3-show") == -1) {
         x.className += " w3-show";
       } else {
         x.className = x.className.replace(" w3-show", "");
       }
+      if (y.className.indexOf("w3-show")) {
+        y.className = y.className.replace(" w3-show", "");
+      }
     }
 
     function SELECT_DATASET(DATASET_NAME) {
-      window.location.href = "/service/" + DATASET_NAME;
+      window.location.href = "/viewer/" + DATASET_NAME;
     }
 
-    openTab(TAB_STATUS);
-
-    function openInquire() {
-      $('#QC_chatform').show(200);
-      //document.getElementById("QC_chatform").style.display = "block";
+    function SHOW_ARCHIVE() {
+      var x = document.getElementById("ARCHIVE_MENU");
+      var y = document.getElementById("DATASET_MENU");
+      if (x.className.indexOf("w3-show") == -1) {
+        x.className += " w3-show";
+      } else {
+        x.className = x.className.replace(" w3-show", "");
+      }
+      if (y.className.indexOf("w3-show")) {
+        y.className = y.className.replace(" w3-show", "");
+      }
     }
 
-    function sendInquire() {
-      var FEEDBACK = '';
-      var INQUIRE = '';
-      $.each($("input:checked"), function (index, value) {
-        FEEDBACK = FEEDBACK + value.value;
-      });
-      INQUIRE = $('#QC_inquire_text').val();
-      generatePacket('LABEL', 'DIALOG', INQUIRE);
-      $('#QC_inquire_text').val('');
-      $('#QC_chatform').hide(200);
-    }
-
-    function closeInquire() {
-      $('#QC_chatform').hide(200);
+    function SELECT_ARCHIVE(DATASET_NAME) {
+      window.location.href = "/viewer/" + DATASET_NAME;
     }
 
     function openChat() {
-      if (FILENAME == '') {
-        alert('이미지 선택 후 문의해주세요.');
-      }
-      else {
-        $('#QC_CHATBOX').show(200);
-        updateChat();
-      }
+      $('#QC_CHATBOX').show(200);
+      updateChat();
+      //document.getElementById("QC_chatform").style.display = "block";
     }
 
     function sendChat() {
       var DIALOG = '';
-      DIALOG = $('#QC_chat_text').val();
+      DIALOG = $('#QC_chat_input').val();
       generatePacket('LABEL', 'DIALOG', DIALOG);
       addChat(DIALOG);
-      $('#QC_chat_text').val('');
+      $('#QC_chat_input').val('');
     }
 
     function updateChat() {
@@ -1150,7 +1093,7 @@
 
     function addChat(DIALOG) {
       let today = new Date();
-      $('#QC_CHAT_TEXT').append('<div class="w3-container w3-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px;"><img src="../static/img/bandmember.jpg" alt="Avatar" class="QC_CHAT_IMG" style="width:100%;"><p style="margin-top: 0px;margin-left: 80px;"><b>' + '{{hospital}}' + '</b></p><p style="margin-top: 0px;margin-bottom:0px;margin-left: 80px;">' + DIALOG + '</p><span style="float:right">' + today.getFullYear() + '/' + addZeros(today.getMonth(), 2) + '/' + addZeros(today.getDate(), 2) + ' ' + addZeros(today.getHours(), 2) + ':' + addZeros(today.getMinutes(), 2) + ':' + addZeros(today.getSeconds(), 2) + '</span></div>');
+      $('#QC_CHAT_TEXT').append('<div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px"><img src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;"><p style="margin-top: 0px;margin-right: 80px;"><b>MANAGER</b></p><p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">' + DIALOG + '</p><span class="time-left">' + today.getFullYear() + '/' + addZeros(today.getMonth(), 2) + '/' + addZeros(today.getDate(), 2) + ' ' + addZeros(today.getHours(), 2) + ':' + addZeros(today.getMinutes(), 2) + ':' + addZeros(today.getSeconds(), 2) + '</span></div>');
       $('#QC_CHAT_TEXT').scrollTop($('#QC_CHAT_TEXT')[0].scrollHeight);
     }
 
@@ -1168,6 +1111,8 @@
       }
       return zero + num;
     }
+
+    openTab(TAB_STATUS);
 
   </script>
 

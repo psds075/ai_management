@@ -11,6 +11,7 @@ import numpy as np
 import pymongo
 from shapely import geometry
 from multiprocessing.pool import ThreadPool
+from datetime import datetime
 pool = ThreadPool(processes=2)
 
 app = Flask(__name__)
@@ -26,8 +27,10 @@ def login():
     hospitaldata = DENTIQUB["hospitaldata"]
 
     if request.method == 'POST':
+        print('test')
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'MANAGER'
+            print('test1')
             return redirect(url_for('viewer'))
         elif(request.form['id']=='demo' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'DEMO'
@@ -59,15 +62,19 @@ def index():
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
     
+    print('test2')
     if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
 
+    print('test3')
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     imagedata = DENTIQUB["imagedata"]
     dataset = DENTIQUB["dataset"]
     
+    print('test4')
+
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
@@ -82,10 +89,10 @@ def viewer(DATASET_NAME):
     datasetlist = []
     archivelist = []
 
-    for data in dataset.find({'STATUS':'ARCHIVE'}):
+    for data in dataset.find({'STATUS':'ARCHIVE'}).sort("NAME",pymongo.DESCENDING):
         archivelist.append({'DATASET_NAME':data['NAME']})
 
-    for data in dataset.find({'STATUS':'INSERTED'}):
+    for data in dataset.find({'STATUS':'INSERTED'}).sort("NAME",pymongo.DESCENDING):
         datasetlist.append({'DATASET_NAME':data['NAME']})
                 
     if DATASET_NAME == 'NONE':
@@ -112,6 +119,66 @@ def viewer(DATASET_NAME):
             datalist.append(data)
         
     return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
+
+
+@app.route("/comment",methods=['GET', 'POST'])
+def comment():
+    
+    if not session['NAME'] == 'MANAGER':
+        return redirect(url_for('login'))
+
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+    dataset = DENTIQUB["dataset"]
+    
+    with open('label_dict.json',encoding = 'utf-8') as json_file:
+        data = json.load(json_file)
+        LABEL_DICT = data['LABEL_DICT']
+
+    response = requests.post('http://dentiqub.iptime.org:5001/api')
+    training_status = json.loads(response.text)['STATUS']
+
+    if(len(training_status.split(' '))==4):
+        training_percent = training_status.split(' ')[2]
+    else:
+        training_percent = 0
+    datasetlist = []
+    archivelist = []
+
+    for data in dataset.find({'STATUS':'ARCHIVE'}).sort("NAME",pymongo.DESCENDING):
+        archivelist.append({'DATASET_NAME':data['NAME']})
+
+    for data in dataset.find({'STATUS':'INSERTED'}).sort("NAME",pymongo.DESCENDING):
+        datasetlist.append({'DATASET_NAME':data['NAME']})
+
+    datalist = []
+    for image in imagedata.find({'DIALOG':{'$exists':True}}):
+        if not 'REVIEW_CHECK' in image:
+            image['REVIEW_CHECK'] = 'UNREAD'
+        if not 'CONFIRM_CHECK' in image:
+            image['CONFIRM_CHECK'] = 'UNCONFIRM'
+        if not 'HOSPITAL' in image:
+            image['HOSPITAL'] = ''
+        if not 'NOTI' in image:
+            image['COMMENT'] = 'UNCOMMENT'
+        elif image['NOTI'] == 'MANAGER':
+            image['COMMENT'] = 'COMMENT'
+        else:
+            image['COMMENT'] = 'UNCOMMENT'
+        data = {
+                'FILENAME' : image['FILENAME'],
+                'DATASET_NAME' : image['DATASET_NAME'],
+                'REVIEW_CHECK': image['REVIEW_CHECK'],
+                'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                'COMMENT' : image['COMMENT'],
+                'HOSPITAL' : image['HOSPITAL'],
+                'NAME' : image['NAME']
+                }
+        datalist.append(data)
+        
+    return render_template('comment.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent)
 
 
 @app.route("/demo", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
@@ -198,12 +265,8 @@ def service(DATASET_NAME):
     else:
         training_percent = 0
     datasetlist = []
-    archivelist = []
 
-    for data in dataset.find({hospital:'READ'}).sort("NAME",pymongo.DESCENDING):
-        archivelist.append({'DATASET_NAME':data['NAME']})
-
-    for data in dataset.find({hospital:'UNREAD'}).sort("NAME",pymongo.DESCENDING):
+    for data in dataset.find({hospital:'INSERTED'}).sort("NAME",pymongo.DESCENDING):
         datasetlist.append({'DATASET_NAME':data['NAME']})
 
     if DATASET_NAME == 'NONE':
@@ -222,14 +285,22 @@ def service(DATASET_NAME):
                 image['REVIEW_CHECK'] = 'UNREAD'
             if not 'CONFIRM_CHECK' in image:
                 image['CONFIRM_CHECK'] = 'UNCONFIRM'
+            if not 'DIALOG' in image:
+                DIALOG = 'NOCOMMENT'
+            else:
+                DIALOG = 'COMMENT'
+            if not 'NOTI' in image:
+                image['NOTI'] = 'NONE'
             data = {
                     'FILENAME' : image['FILENAME'],
                     'REVIEW_CHECK': image['REVIEW_CHECK'],
                     'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                    'DIALOG' : DIALOG,
+                    'NOTI' : image['NOTI']
                     }
             datalist.append(data)
         
-    return render_template('service.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, hospital = hospital)
+    return render_template('service.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, hospital = hospital)
 
 
 @app.route("/_JSON", methods=['GET', 'POST'])
@@ -239,6 +310,21 @@ def sending_data():
     DENTIQUB = myclient["DENTIQUB"]
     imagedata = DENTIQUB["imagedata"]
     dataset = DENTIQUB["dataset"]
+
+    if(request.json['ORDER'] == 'REFLASH'):
+        target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
+        if('DIALOG' in target):
+            data = {'DIALOG' : target['DIALOG']}
+        else:
+            data = {'DIALOG' : []}
+        print(target['DIALOG'])
+        if(not 'NOTI' in target):
+            target['NOTI'] = 'NONE'
+        if((str(request.json['ID']) == 'MANAGER') & (target['NOTI'] == 'MANAGER')):
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'NONE' }})
+        elif((str(request.json['ID']) != 'MANAGER') & (target['NOTI'] != 'MANAGER')):
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'NONE' }})
+        return json.dumps(json.dumps(data))
 
     if(request.json['ORDER'] == 'TARGET'):
         target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
@@ -284,14 +370,23 @@ def sending_data():
                 EACH_LABEL['width'] = int(EACH_LABEL['width'] / request.json['RATIO'])
                 EACH_LABEL['height'] = int(EACH_LABEL['height'] / request.json['RATIO'])
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL)}})
+        # Dialog 데이터의 경우 Push로 데이터를 입력함
+        if(request.json['PARAMETER'] == 'DIALOG'):
+            now = datetime.now()
+            dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$push": {request.json['PARAMETER']:[str(request.json['ID']), str(request.json['SETVALUE']),dt_string]}})
+            if(str(request.json['ID']) == 'MANAGER'):
+                imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'HOSPITAL' }})
+            else:
+                imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'MANAGER' }})
+
         else:
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
-        
         if(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
+            # Confirm 관련 데이터셋의 경우 시간까지 기록함
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'TIMESTAMP':str(pd.Timestamp('now'))}})
-            print('Confirm Check.')
+            # 전체 데이터셋이 Confirm인 경우 Dataset의 Status 바꿈
             if(not imagedata.find_one({'DATASET_NAME':request.json['DATASET'],'CONFIRM_CHECK':'UNCONFIRM'})):
-                print('Confirm.')
                 dataset.update_one({'NAME':request.json['DATASET']},{ "$set": { "STATUS": "ARCHIVE" } })
 
         return json.dumps('Success')
@@ -303,9 +398,10 @@ def sending_data():
         mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
 
         #병렬 코드
-        result1 = pool.apply_async(request_prediction, (5101, mydata)) 
-        result2 = pool.apply_async(request_prediction, (5102, mydata))
-        boxes = result1.get() + result2.get()
+        boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
+        boxes2 = pool.apply_async(request_prediction, (5102, mydata))
+        #osteoporosis = pool.apply_async(request_prediction, (5201, mydata))
+        boxes = boxes1.get() + boxes2.get()
         boxes = bbox_duplicate_check(boxes)
 
         #시퀀셜 코드
@@ -317,6 +413,8 @@ def sending_data():
 
         if(DEBUG_MODE == True):
             print(boxes)
+
+        #query = {'boxes':boxes, osteoporosis:'osteoporosis'}
             
         return json.dumps(boxes)
 

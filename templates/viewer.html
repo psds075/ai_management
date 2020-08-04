@@ -87,7 +87,7 @@
       <img src="../static/src/AI MANAGEMENT LOGO.png" width=100%>
     </a>
     <div>
-      <div class="w3-dropdown-click" style='width:33%'>
+      <div class="w3-dropdown-click" style='width:31%'>
         <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">DATASET</button>
         <div id="DATASET_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
           style="overflow-y:scroll;height:400px;">
@@ -97,7 +97,7 @@
           {% endfor %}
         </div>
       </div>
-      <div class="w3-dropdown-click" style='width:33%'>
+      <div class="w3-dropdown-click" style='width:31%'>
         <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">ARCHIVE</button>
         <div id="ARCHIVE_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
           style="overflow-y:scroll;height:400px;">
@@ -107,7 +107,7 @@
           {% endfor %}
         </div>
       </div>
-      <button onclick='sendCompleteLabeling();' class="w3-button w3-black">UNLOAD</button>
+      <button onclick='window.location.href = "/comment";' class="w3-button w3-black" style='width:33%'>COMMENT</button>
     </div>
 
     <div class="w3-bar w3-black">
@@ -224,7 +224,7 @@
                 </div>
               </div>
               <br>
-              <div id="right_box7" style='text-align:center'>
+              <div id="right_box7" style='text-align:center' class='w3-white'>
                 <span id="comments">Comments</span>
                 <a href="javascript:void(0)" onclick="document.getElementById('id02').style.display='block'"
                   id="insert_btn">INSERT</a>
