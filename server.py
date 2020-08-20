@@ -627,7 +627,7 @@ def bbox_duplicate_check(boxes):
                 for j in range(i+1, len(boxes)):
                     if(boxes[i]['label'] == boxes[j]['label']):
                         if(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])) > 0.3):
-                            #print(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])))
+                            print(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])))
                             boxes.append(combine_bbox(boxes[i], boxes[j]))
                             del boxes[i], boxes[j]
                             check = True

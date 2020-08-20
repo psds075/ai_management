@@ -44,7 +44,7 @@ for data in dataset.find(query):
 imagedata.delete_many({})
 '''
 
-
+'''
 # 병원 imagedata를 통해서 Dataset 내에 병원 현황 업데이트하기
 # IMAGE DB Read Query
 for image in imagedata.find():
@@ -53,13 +53,20 @@ for image in imagedata.find():
             query = {'NAME':image['DATASET_NAME']}
             newvalues = { "$set": {image['HOSPITAL']: "INSERTED" } }
             dataset.update_one(query, newvalues)
+'''
 
-
+'''
 # 병원 별 DB 읽기
 query = {'천안 예치과' : {'$regex':''}}
 for data in dataset.find(query):
     print(data)
+'''
 
+
+# 병원 별 DB 읽기
+query = {'BBOX_PREDICTION' : {'$regex':''}}
+for data in dataset.find(query):
+    print(data)
 
 
 

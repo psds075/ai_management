@@ -21,15 +21,15 @@ imagedata = db["imagedata"]
 # IMAGE DB Read One
 query = {'HOSPITAL':'수원 예치과'}
 image = imagedata.find_one(query)
-print(image)
+print(json.loads(image['BBOX_LABEL']))
 '''
 
-
+'''
 # IMAGE DB Read Query
 query = {'DIALOG':{'$exists':True}}
 for image in imagedata.find(query):
     print(image)
-
+'''
 
 # DATASET DB UPDATE
 #newvalues = { "$set": { "STATUS": "INSERTED" } }
@@ -80,3 +80,10 @@ print(data)
 # IMAGE DB Delete ALL
 hospitaldata.delete_many({})
 '''
+
+
+# IMAGE DB Read Query
+query = {'BBOX_PREDICTION':{'$exists':True}}
+for image in imagedata.find(query):
+    print(image['TIMESTAMP'], image['DATASET_NAME'])
+
