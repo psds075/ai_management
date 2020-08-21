@@ -365,11 +365,18 @@ def sending_data():
         if(request.json['PARAMETER'] == 'BBOX_LABEL'):
             BBOX_LABEL = json.loads(request.json['SETVALUE'])
             for EACH_LABEL in BBOX_LABEL:
+                print(EACH_LABEL)
+            for EACH_LABEL in BBOX_LABEL:
                 EACH_LABEL['left'] = int(EACH_LABEL['left'] / request.json['RATIO'])
                 EACH_LABEL['top'] = int(EACH_LABEL['top'] / request.json['RATIO'])
                 EACH_LABEL['width'] = int(EACH_LABEL['width'] / request.json['RATIO'])
                 EACH_LABEL['height'] = int(EACH_LABEL['height'] / request.json['RATIO'])
+            for EACH_LABEL in BBOX_LABEL:
+                print(EACH_LABEL)
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL)}})
+        else:
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
+
         # Dialog 데이터의 경우 Push로 데이터를 입력함
         if(request.json['PARAMETER'] == 'DIALOG'):
             now = datetime.now()
@@ -380,8 +387,6 @@ def sending_data():
             else:
                 imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'MANAGER' }})
 
-        else:
-            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
         if(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
             # Confirm 관련 데이터셋의 경우 시간까지 기록함
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'TIMESTAMP':str(pd.Timestamp('now'))}})
@@ -412,7 +417,7 @@ def sending_data():
         #boxes = bbox_duplicate_check(boxes1+boxes2)
 
         if(DEBUG_MODE == True):
-            print(boxes)
+            pass #print(boxes)
 
         #query = {'boxes':boxes, osteoporosis:'osteoporosis'}
             
@@ -629,7 +634,7 @@ def bbox_duplicate_check(boxes):
                         if(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])) > 0.3):
                             print(calculate_cross(bbox2rect(boxes[i]), bbox2rect(boxes[j])))
                             boxes.append(combine_bbox(boxes[i], boxes[j]))
-                            del boxes[i], boxes[j]
+                            del boxes[j], boxes[i] 
                             check = True
                             break
         else:
