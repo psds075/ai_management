@@ -85,5 +85,5 @@ hospitaldata.delete_many({})
 # IMAGE DB Read Query
 query = {'BBOX_PREDICTION':{'$exists':True}}
 for image in imagedata.find(query):
-    print(image['TIMESTAMP'], image['DATASET_NAME'])
+    print(image['FILENAME'], image['DATASET_NAME'])
 

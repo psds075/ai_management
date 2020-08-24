@@ -397,6 +397,12 @@ def sending_data():
         return json.dumps('Success')
 
     if(request.json['ORDER'] == 'PREDICTION'):
+
+        myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+        DENTIQUB = myclient["DENTIQUB"]
+        imagedata = DENTIQUB["imagedata"]
+        dataset = DENTIQUB["dataset"]
+
         target_image = os.path.join(BASE_DIR+request.json['DATASET'],request.json['FILENAME'])
         img = hanimread(target_image) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
         data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
@@ -420,7 +426,8 @@ def sending_data():
             pass #print(boxes)
 
         #query = {'boxes':boxes, osteoporosis:'osteoporosis'}
-            
+        imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes)}})
+
         return json.dumps(boxes)
 
     if(request.json['ORDER'] == 'START_TRAINING'):
