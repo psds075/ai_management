@@ -414,19 +414,15 @@ def sending_data():
         #osteoporosis = pool.apply_async(request_prediction, (5201, mydata))
         boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
         boxes = bbox_duplicate_check(boxes)
-
-        #시퀀셜 코드
-        #response = requests.post('http://dentiqub.iptime.org:5101/api', json=mydata)
-        #boxes1 = json.loads(response.text)['message']
-        #response = requests.post('http://dentiqub.iptime.org:5102/api', json=mydata)
-        #boxes2 = json.loads(response.text)['message']
-        #boxes = bbox_duplicate_check(boxes1+boxes2)
+        VERSION = boxes1.get()['VERSION']
+        ARCHITECTURE = boxes1.get()['ARCHITECTURE']
+        TRAINING_DATE = boxes1.get()['TRAINING_DATE']
 
         if(DEBUG_MODE == True):
             pass #print(boxes)
 
         #query = {'boxes':boxes, osteoporosis:'osteoporosis'}
-        imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes)}})
+        imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes),'BBOX_VERSION':VERSION, 'BBOX_ARCHITECTURE':ARCHITECTURE,'TRAINING_DATE':TRAINING_DATE}})
 
         return json.dumps(boxes)
 
