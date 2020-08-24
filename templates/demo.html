@@ -203,7 +203,7 @@
               </div>
               <br>
               <div id="right_box7" style='text-align:center'>
-                <span id="comments">예측 확인된 이상소견</span>
+                <span style="color:black;padding:2px;display:inline-block;">예측 이상소견</span>
               </div>
               <div id="comment_box" style="height:calc(100% - 500px);overflow-y:scroll;width:100%;">
                 <table id="disease_list" class="w3-table-all w3-text-black">
@@ -324,6 +324,9 @@
     var canvasOffset = $("#canvas").offset();
     var offsetX = canvasOffset.left;
     var offsetY = canvasOffset.top;
+
+    var brightness = 100;
+    var contrast = 100;
 
     var img = new Image();
 
@@ -500,7 +503,16 @@
       }
     }
 
-
+    function DRAW_IMAGE() {
+      canvas.width = img.width * image_ratio;
+      canvas.height = img.height * image_ratio;
+      ctx.clearRect(0, 0, img.width * image_ratio, img.height * image_ratio);
+      ctx.filter = 'brightness(' + brightness + '%' + ') ' + 'contrast(' + contrast + '%' + ')';
+      ctx.drawImage(img, 0, 0, img.width * image_ratio, img.height * image_ratio);
+      point_array.forEach(function (rect, index) {
+        pointing_label(canvas, ctx, img, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.label);
+      });
+    }
 
     //BUTTON CONTROL BLOCK
     function BUTTON_CONROL() {
@@ -559,14 +571,14 @@
 
       //BRIGHTNESS CONTROL
       $('#brightness input').on("input", function () {
-        var img = $('#brightness img');
-        TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + this.value * 2 + '%' + ')' });
+        brightness = this.value * 2;
+        DRAW_IMAGE();
       });
 
       //CONTRAST CONTROL
       $('#contrast input').on("input", function () {
-        var img = $('#contrast img');
-        TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + this.value * 2 + '%' + ')' });
+        contrast = this.value * 2;
+        DRAW_IMAGE();
       });
 
       // SET INITIAL BRIGHTNESS CONTRAST
@@ -671,7 +683,7 @@
           ctx.stroke();
 
           ctx.lineWidth = 7;
-          ctx.font = conf_font;          
+          ctx.font = conf_font;
           ctx.strokeText(label_text, mouseX + 30, mouseY - 25);
           ctx.fillText(label_text, mouseX + 30, mouseY - 25);
         }
@@ -882,7 +894,7 @@
       });
     }
 
-    function loadPrediction(result){
+    function loadPrediction(result) {
       $('#disease_list').html('');
       point_array = []
       function execute1() {
@@ -924,7 +936,7 @@
           });
         });
         showPage();
-        }
+      }
       execute();
     }
 

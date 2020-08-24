@@ -412,7 +412,7 @@ def sending_data():
         boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
         boxes2 = pool.apply_async(request_prediction, (5102, mydata))
         #osteoporosis = pool.apply_async(request_prediction, (5201, mydata))
-        boxes = boxes1.get() + boxes2.get()
+        boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
         boxes = bbox_duplicate_check(boxes)
 
         #시퀀셜 코드
@@ -653,8 +653,10 @@ def bbox_duplicate_check(boxes):
 def request_prediction(port, mydata):
     response = requests.post('http://dentiqub.iptime.org:'+str(port)+'/api', json=mydata)
     boxes = json.loads(response.text)['message']
-    print(boxes)
-    return boxes
+    VERSION = json.loads(response.text)['VERSION']
+    ARCHITECTURE = json.loads(response.text)['ARCHITECTURE']
+    TRAINING_DATE = json.loads(response.text)['TRAINING_DATE']
+    return {'BOXES':boxes, 'VERSION':VERSION, 'ARCHITECTURE':ARCHITECTURE, 'TRAINING_DATE':TRAINING_DATE}
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)
