@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>MEDIPARTNER AI MANAGEMENT</title>
+<title>AIQUB MANAGEMENT SOLUTION</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../static/css/imageviewer.css" type="text/css" />
@@ -349,39 +349,11 @@
       <h2 style='margin-top:0px'>Chat Messages</h2>
 
       <div id='QC_CHAT_TEXT' style="max-height:500px;overflow-y:scroll;">
-        <div class="w3-container w3-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px">
-          <img src="../static/img/bandmember.jpg" alt="Avatar" class="QC_CHAT_IMG" style="width:100%;">
-          <p style="margin-top: 0px;margin-left: 80px;"><b>수원 예치과</b></p>
-          <p style="margin-top: 0px;margin-bottom:0px;margin-left: 80px;">Hello. How are you today? Hello. How are you
-            today?Hello. How are you today?Hello. How are you today?Hello.
-            How are you today?Hello. How are you today?Hello. How are you today?Hello. How are you today?</p>
-          <span style="float:right">11:00</span>
-        </div>
-        <div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px">
-          <img src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;">
+        <div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px"><img
+            src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;">
           <p style="margin-top: 0px;margin-right: 80px;"><b>MANAGER</b></p>
-          <p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">Hey! I'm fine. Thanks for asking!</p>
-          <span class="time-left">11:01</span>
-        </div>
-        <div class="w3-container w3-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px">
-          <img src="../static/img/bandmember.jpg" alt="Avatar" class="QC_CHAT_IMG" style="width:100%;">
-          <p style="margin-top: 0px;margin-left: 80px;"><b>수원 예치과</b></p>
-          <p style="margin-top: 0px;margin-bottom:0px;margin-left: 80px;">Sweet! So, what do you wanna do today?</p>
-          <span style="float:right">11:02</span>
-        </div>
-        <div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px">
-          <img src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;">
-          <p style="margin-top: 0px;margin-right: 80px;"><b>MANAGER</b></p>
-          <p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">Nah, I dunno. Play soccer.. or learn more
-            coding perhaps?</p>
-          <span class="time-left">11:05</span>
-        </div>
-        <div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px">
-          <img src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;">
-          <p style="margin-top: 0px;margin-right: 80px;"><b>MANAGER</b></p>
-          <p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">Nah, I dunno. Play soccer.. or learn more
-            coding perhaps?</p>
-          <span class="time-left">11:05</span>
+          <p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">안녕하세요. 판독 관련 문의사항을 남겨주시면 조속히 답변드리겠습니다.</p>
+          <span class="time-left"></span>
         </div>
       </div>
 
@@ -895,7 +867,6 @@
           success: function (result) {
             if (packet['ORDER'] == 'REFLASH') {
               result = JSON.parse(result);
-              console.log(result['DIALOG']);
               $('#QC_CHAT_TEXT').html('<div class="w3-container w3-dark-grey w3-card-2 w3-margin-bottom" style="padding:5px 5px"><img src="../static/img/avatar_g2.jpg" alt="Avatar" class="QC_CHAT_IMG_RIGHT" style="width:100%;"><p style="margin-top: 0px;margin-right: 80px;"><b>MANAGER</b></p><p style="margin-top: 0px;margin-bottom:0px;margin-right: 80px;">안녕하세요. 판독 관련 문의사항을 남겨주시면 조속히 답변드리겠습니다.</p><span class="time-left"></span></div>');
               $.each(result['DIALOG'], function (index, value) {
                 if (value[0] == 'MANAGER') {
@@ -985,7 +956,6 @@
               annotator_stop = false;
               showPage();
 
-
               var parameter = {};
               parameter['DATASET'] = DATASET;
               parameter['ORDER'] = 'LABEL';
@@ -999,7 +969,6 @@
                 generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
               }
               execute();
-
             }
             if (packet['ORDER'] == 'START_TRAINING') {
               alert(result);
@@ -1074,9 +1043,13 @@
     }
 
     function openChat() {
-      $('#QC_CHATBOX').show(200);
-      updateChat();
-      //document.getElementById("QC_chatform").style.display = "block";
+      if (FILENAME == '') {
+        alert('이미지 선택 후 문의해주세요.');
+      }
+      else {
+        $('#QC_CHATBOX').show(200);
+        updateChat();
+      }
     }
 
     function sendChat() {

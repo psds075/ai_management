@@ -161,17 +161,18 @@ def comment():
             image['CONFIRM_CHECK'] = 'UNCONFIRM'
         if not 'HOSPITAL' in image:
             image['HOSPITAL'] = ''
+        if not 'NAME' in image:
+            image['NAME'] = 'UNKNOWN'
         if not 'NOTI' in image:
             image['COMMENT'] = 'UNCOMMENT'
             image['NOTI'] = ''
-        if not 'NAME' in image:
-            image['NAME'] = 'UNCOMMENT'
-        if not 'COMMENT' in image:
-            image['COMMENT'] = 'UNCOMMENT'
+            print('check1')
         elif image['NOTI'] == 'MANAGER':
             image['COMMENT'] = 'COMMENT'
+            print('check2')
         else:
             image['COMMENT'] = 'UNCOMMENT'
+            print('check3')
         data = {
                 'FILENAME' : image['FILENAME'],
                 'DATASET_NAME' : image['DATASET_NAME'],
@@ -378,11 +379,8 @@ def sending_data():
             for EACH_LABEL in BBOX_LABEL:
                 print(EACH_LABEL)
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL)}})
-        else:
-            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
-
         # Dialog 데이터의 경우 Push로 데이터를 입력함
-        if(request.json['PARAMETER'] == 'DIALOG'):
+        elif(request.json['PARAMETER'] == 'DIALOG'):
             now = datetime.now()
             dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$push": {request.json['PARAMETER']:[str(request.json['ID']), str(request.json['SETVALUE']),dt_string]}})
@@ -391,12 +389,15 @@ def sending_data():
             else:
                 imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'MANAGER' }})
 
-        if(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
+        elif(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
             # Confirm 관련 데이터셋의 경우 시간까지 기록함
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'TIMESTAMP':str(pd.Timestamp('now'))}})
             # 전체 데이터셋이 Confirm인 경우 Dataset의 Status 바꿈
             if(not imagedata.find_one({'DATASET_NAME':request.json['DATASET'],'CONFIRM_CHECK':'UNCONFIRM'})):
                 dataset.update_one({'NAME':request.json['DATASET']},{ "$set": { "STATUS": "ARCHIVE" } })
+
+        else:
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
 
         return json.dumps('Success')
 

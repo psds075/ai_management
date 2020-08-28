@@ -38,17 +38,17 @@ for image in imagedata.find(query):
 #data = imagedata.find_one(query)
 #print(data)
 
-'''
+
 # Dialog 추가(PUSH)하기 
 now = datetime.now()
 dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
-query = {'FILENAME': '20200717110202.315518_283.jpg'}
+query = {'FILENAME': '20200828105255_95000390.jpg'}
 newvalues = { "$push": { "DIALOG": ['수원 예치과', '안녕하세요. 문의드려도 될까요?',dt_string] } }
 imagedata.update_one(query, newvalues)
 
 data = imagedata.find_one(query)
 print(data)
-'''
+
 
 '''
 # Dialog 리셋하기 
@@ -81,9 +81,9 @@ print(data)
 hospitaldata.delete_many({})
 '''
 
-
+'''
 # IMAGE DB Read Query
 query = {'BBOX_PREDICTION':{'$exists':True}}
 for image in imagedata.find(query):
     print(image['FILENAME'], image['DATASET_NAME'])
-
+'''
