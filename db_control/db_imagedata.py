@@ -16,7 +16,7 @@ imagedata = db["imagedata"]
 #query = {'HOSPITAL':'수원 예치과'}
 #if not imagedata.find(query):
 #    imagedata.insert_one(query)
-         
+
 '''
 # IMAGE DB Read One
 query = {'HOSPITAL':'수원 예치과'}

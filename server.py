@@ -163,6 +163,11 @@ def comment():
             image['HOSPITAL'] = ''
         if not 'NOTI' in image:
             image['COMMENT'] = 'UNCOMMENT'
+            image['NOTI'] = ''
+        if not 'NAME' in image:
+            image['NAME'] = 'UNCOMMENT'
+        if not 'COMMENT' in image:
+            image['COMMENT'] = 'UNCOMMENT'
         elif image['NOTI'] == 'MANAGER':
             image['COMMENT'] = 'COMMENT'
         else:
@@ -317,7 +322,6 @@ def sending_data():
             data = {'DIALOG' : target['DIALOG']}
         else:
             data = {'DIALOG' : []}
-        print(target['DIALOG'])
         if(not 'NOTI' in target):
             target['NOTI'] = 'NONE'
         if((str(request.json['ID']) == 'MANAGER') & (target['NOTI'] == 'MANAGER')):
