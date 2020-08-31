@@ -52,7 +52,7 @@ print(data)
 
 '''
 # Dialog 리셋하기 
-query = {'FILENAME': '20200717110202.315518_283.jpg'}
+query = {'FILENAME': '20200828105255_95000390.jpg'}
 newvalues = { "$set": { "DIALOG": [] } }
 imagedata.update_one(query, newvalues)
 

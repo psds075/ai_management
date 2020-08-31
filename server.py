@@ -27,10 +27,8 @@ def login():
     hospitaldata = DENTIQUB["hospitaldata"]
 
     if request.method == 'POST':
-        print('test')
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'MANAGER'
-            print('test1')
             return redirect(url_for('viewer'))
         elif(request.form['id']=='demo' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'DEMO'
@@ -379,6 +377,7 @@ def sending_data():
             for EACH_LABEL in BBOX_LABEL:
                 print(EACH_LABEL)
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL)}})
+
         # Dialog 데이터의 경우 Push로 데이터를 입력함
         elif(request.json['PARAMETER'] == 'DIALOG'):
             now = datetime.now()
@@ -390,6 +389,7 @@ def sending_data():
                 imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'MANAGER' }})
 
         elif(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
             # Confirm 관련 데이터셋의 경우 시간까지 기록함
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'TIMESTAMP':str(pd.Timestamp('now'))}})
             # 전체 데이터셋이 Confirm인 경우 Dataset의 Status 바꿈
