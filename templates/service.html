@@ -784,76 +784,80 @@
     function pointing_label(canvas, ctx, img, pointX, pointY, label_text) {
       mouseX = pointX;
       mouseY = pointY;
-      conf_font = "bold 20px Georgia";
+      conf_font = "15px Georgia";
+      arrow_length = 10;
+      bg_width = 3;
+      arrow_thickness = 2;
+      left_padding = 14;
 
       if (mouseY < 100) {
         if (mouseX < 600) {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.lineTo(mouseX, mouseY + arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.lineTo(mouseX + arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 30, mouseY + 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX + arrow_length*2, mouseY + arrow_length*2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + 30, mouseY + 35);
-          ctx.fillText(label_text, mouseX + 30, mouseY + 35);
+          ctx.strokeText(label_text, mouseX + arrow_length*2, mouseY + arrow_length*2+5);
+          ctx.fillText(label_text, mouseX + arrow_length*2, mouseY + arrow_length*2+5);
         } else {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.lineTo(mouseX, mouseY + arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.lineTo(mouseX - arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 30, mouseY + 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX - arrow_length*2, mouseY + arrow_length*2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
-          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
+          ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length*2+5);
+          ctx.fillText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length*2+5);
         }
       } else {
         if (mouseX < 600) {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.lineTo(mouseX, mouseY - arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.lineTo(mouseX + arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 30, mouseY - 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX + arrow_length*2, mouseY - arrow_length*2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + 30, mouseY - 25);
-          ctx.fillText(label_text, mouseX + 30, mouseY - 25);
+          ctx.strokeText(label_text, mouseX + arrow_length*2, mouseY - arrow_length*2+5);
+          ctx.fillText(label_text, mouseX + arrow_length*2, mouseY - arrow_length*2+5);
         }
         else {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.lineTo(mouseX, mouseY - arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.lineTo(mouseX - arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 30, mouseY - 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX - arrow_length*2, mouseY - arrow_length*2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
-          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
+          ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length*2+5);
+          ctx.fillText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length*2+5);
         }
       }
     }
@@ -865,8 +869,6 @@
     }
 
     function openTab(tabName) {
-      //$('.CURRENT').addClass('READ');
-      //$('.CURRENT').removeClass('CURRENT');
 
       if (tabName == 'COMMENT') {
         $('.DELETE').hide(200);
@@ -897,8 +899,6 @@
       }
       searchFilter();
     }
-
-
 
     function searchFilter() {
       input = document.getElementById("mySearch");
