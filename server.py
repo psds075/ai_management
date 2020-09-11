@@ -98,6 +98,17 @@ def viewer(DATASET_NAME):
         archive_check = 'NONE'
 
     else:
+        # 해당 날짜에 UNCONFIRM이 없으면 CONFIRM 시키기
+        query = {'DATASET_NAME':DATASET_NAME, 'CONFIRM_CHECK':'UNCONFIRM'}
+        if not imagedata.find_one(query):
+            query = {'NAME':DATASET_NAME}
+            newvalues = { "$set": { "STATUS": "ARCHIVE" } }
+            dataset.update_one(query, newvalues)
+        else:
+            query = {'NAME':DATASET_NAME}
+            newvalues = { "$set": { "STATUS": "INSERTED" } }
+            dataset.update_one(query, newvalues)
+        
         archive_check = dataset.find_one({'NAME':DATASET_NAME})['STATUS']
         if(len(os.listdir(BASE_DIR+DATASET_NAME)) != imagedata.find({'DATASET_NAME' : DATASET_NAME}).count()):
             for filename in os.listdir(BASE_DIR+DATASET_NAME):

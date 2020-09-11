@@ -19,8 +19,13 @@ if not dataset.find_one(query):
 
 
 # DATASET DB Read One
+#query = {'NAME':'20200910'}
 #data = dataset.find_one(query)
 #print(data)
+
+# 전체 데이터 읽기
+#for data in dataset.find({}):
+#    print(data)
 
 
 '''
@@ -62,14 +67,25 @@ for data in dataset.find(query):
     print(data)
 '''
 
-
+'''
 # 병원 별 DB 읽기
 query = {'BBOX_PREDICTION' : {'$regex':''}}
 for data in dataset.find(query):
     print(data)
+'''
 
-
-
-
-
+'''
+# 해당 날짜에 UNCONFIRM이 없으면 CONFIRM 시키기
+DATASET_NAME = '20200908'
+query = {'DATASET_NAME':DATASET_NAME, 'CONFIRM_CHECK':'UNCONFIRM'}
+if not imagedata.find_one(query):
+    query = {'NAME':DATASET_NAME}
+    newvalues = { "$set": { "STATUS": "ARCHIVE" } }
+    dataset.update_one(query, newvalues)
+else:
+    print(imagedata.find_one(query))
+    query = {'NAME':DATASET_NAME}
+    newvalues = { "$set": { "STATUS": "INSERTED" } }
+    dataset.update_one(query, newvalues)
+'''
 
