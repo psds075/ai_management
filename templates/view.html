@@ -221,8 +221,12 @@
             <span class="w3-tag w3-round w3-red w3-border w3-border-white w3-display-bottomright"
               style="margin-bottom:15px">NEW</span>
             {% endif %}
-            <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
-              {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}
+            <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+              <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
+              <br>
+              <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
+              <br>
+              <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
             </div>
           </div>
         </a>
