@@ -4,11 +4,17 @@
 <!-- Side Navigation -->
 <nav class="w3-sidebar w3-bar-block w3-collapse w3-animate-left w3-card" id="mySidebar">
   <a href="/logout" class="w3-bar-item w3-button w3-large" id="mySidebar2">
-    <img src="../static/src/AI MANAGEMENT LOGO.png" width=100%>
+    <img src="../static/src/logo_horizontal.jpg" width=100%>
   </a>
+  <div class='w3-container w3-blue-grey'>
+    <p><i class="fa fas fa-hospital w3-margin-right w3-large"></i>{{hospital}}
+      <button class="w3-button w3-red w3-hover-grey w3-padding-small w3-small" style='float:right;'
+        onclick='window.location.href = "/logout";'>LOG OUT</button>
+    </p>
+  </div>
   <div>
-    <div class="w3-dropdown-click" style='width:31%'>
-      <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">DATASET</button>
+    <div class="w3-dropdown-click" style='width:40%'>
+      <button onclick="SHOW_DATASET()" class="w3-button w3-black w3-round-small">날짜 선택하기</button>
       <div id="DATASET_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
         style="overflow-y:scroll;height:400px;">
         {% for dataset in datasetlist %}
@@ -17,37 +23,30 @@
         {% endfor %}
       </div>
     </div>
-    <div class="w3-dropdown-click" style='width:31%'>
-      <button onclick="SHOW_ARCHIVE()" class="w3-button w3-black w3-round-small">ARCHIVE</button>
-      <div id="ARCHIVE_MENU" class="w3-dropdown-content w3-bar-block w3-border w3-animate-opacity"
-        style="overflow-y:scroll;height:400px;">
-        {% for archive in archivelist %}
-        <a href="#" class="w3-bar-item w3-button"
-          onclick="SHOW_ARCHIVE();SELECT_ARCHIVE('{{archive['DATASET_NAME']}}');">{{archive['DATASET_NAME']}}</a>
-        {% endfor %}
-      </div>
-    </div>
-    <button onclick='window.location.href = "/comment";' class="w3-button w3-black" style='width:33%'>COMMENT</button>
   </div>
 
   <div class="w3-bar w3-black">
-    <button class="w3-button" id="UNCONFIRM_TAB" onclick="openTab('UNCONFIRM')">UNCONFIRM</button>
-    <button class="w3-button" id="CONFIRM_TAB" onclick="openTab('CONFIRM')">CONFIRM</button>
+    <button class="w3-button" id="UNREAD_TAB" onclick="openTab('UNREAD')">UNREAD</button>
+    <button class="w3-button" id="COMMENT_TAB" onclick="openTab('COMMENT')">COMMENT</button>
     <button class="w3-button w3-grey" id="ALL_TAB" onclick="openTab('ALL')">ALL</button>
   </div>
 
   <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
 
-  <div id="Demo1" class="w3-animate-left">
+  <div id="Demo1" class="w3-animate-left" , style="height:calc(100% - (100px + 210px));">
     {% for data in datalist %}
-    <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
-      text="{{data['FILENAME']}}">
+    <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} {{data['DIALOG']}} ARTICLE_LIST w3-display-container"
+      id="{{data['FILENAME'][:-4]}}" text="{{data['FILENAME']}}">
       <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
         onclick="openImage('{{data['FILENAME']}}')" class="img_name">
         <div class="w3-container" style='padding:0px'>
           <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}}
               style='height:65px;width:130px;'>
           </div>
+          {% if data['NOTI'] == 'HOSPITAL' %}
+          <span class="w3-tag w3-round w3-red w3-border w3-border-white w3-display-bottomright"
+            style="margin-bottom:15px">NEW</span>
+          {% endif %}
           <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
             <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
             <br>
@@ -61,19 +60,11 @@
     {% endfor %}
   </div>
   <div class=center>
-    <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START
-      TRAINING</button>
-    <button id=PROGRESSING_BUTTON class=below_btn onclick="PROGRESSING_BUTTON_CONTROL();" style='display:none;'>
-      <i class="fa fa-spinner fa-spin"></i>
-      PROGRESSING
-      <div class="w3-light-grey" style='float:inline-end'>
-        <div class="w3-blue" style="height:3px;width:{{training_percent}}%;float:inline-end"></div>
-      </div>
-    </button>
     <button class=below_btn onclick="SUMMARY_BUTTON_CONTROL();">STATISTICS
       SUMMARY</button>
   </div>
 </nav>
+
 {% endblock %}
 
 {% block rightnav %}
