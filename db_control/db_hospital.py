@@ -3,6 +3,7 @@
 import pymongo
 import os
 import pandas as pd
+from datetime import datetime
 
 # Connection
 myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
@@ -40,3 +41,25 @@ for hospital in hospitaldata.find():
 # HOSPITAL DB Delete
 hospitaldata.delete_many({})
 '''
+
+'''
+# UPDATE
+# 최근접속일 업데이트
+now = datetime.now()
+NOW_STRING = now.strftime("%Y-%m-%d")
+myquery = { "NAME": "UNKNOWN" }
+newvalues = { "$set": { "최근접속일": NOW_STRING } }
+hospitaldata.update_one(myquery, newvalues)
+
+# 최근전송일 업데이트
+now = datetime.now()
+NOW_STRING = now.strftime("%Y-%m-%d")
+myquery = { "NAME": "UNKNOWN" }
+newvalues = { "$set": { "최근전송일": NOW_STRING } }
+hospitaldata.update_one(myquery, newvalues)
+'''
+
+
+
+
+

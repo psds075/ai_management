@@ -317,6 +317,34 @@ def service(DATASET_NAME):
         
     return render_template('service.html', datalist = datalist, datasetlist = datasetlist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, hospital = hospital)
 
+@app.route("/hospital", methods=['GET', 'POST'])
+def hospital():
+    if not session.get('USER'):
+        return redirect(url_for('login'))
+    USER = session['USER']
+
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    hospitalMRO = myclient["hospitalMRO"]
+    hospital_list = hospitalMRO["hospital_list"]
+    hospitals = hospital_list.find({})
+
+    DENTIQUB = myclient["DENTIQUB"]
+    hospitaldata = DENTIQUB["hospitaldata"]
+    hospitals = []
+
+    for hospital in hospitaldata.find({}).sort("NAME",pymongo.ASCENDING): 
+        if not "WEEKLYIMAGES" in hospital:
+            hospital['WEEKLYIMAGES'] = 'NONE'
+        if not "DAILYIMAGES" in hospital:
+            hospital['DAILYIMAGES'] = 'NONE'
+        if not "최근접속일" in hospital:
+            hospital['최근접속일'] = 'NONE'
+        if not "최근전송일" in hospital:
+            hospital['최근전송일'] = 'NONE'
+        hospitals.append(hospital)
+
+    return render_template('hospital.html', USER=USER, hospitals = hospitals)
+
 
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
