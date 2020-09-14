@@ -3,7 +3,7 @@
 import pymongo
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 # Connection
 myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
@@ -59,7 +59,9 @@ newvalues = { "$set": { "최근전송일": NOW_STRING } }
 hospitaldata.update_one(myquery, newvalues)
 '''
 
-
+today = date.today()
+yesterday = today - timedelta(days=1)
+print(yesterday)
 
 
 

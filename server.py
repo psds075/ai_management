@@ -11,7 +11,7 @@ import numpy as np
 import pymongo
 from shapely import geometry
 from multiprocessing.pool import ThreadPool
-from datetime import datetime
+from datetime import datetime, date, timedelta
 pool = ThreadPool(processes=2)
 
 app = Flask(__name__)
@@ -310,6 +310,8 @@ def service(DATASET_NAME):
                     'FILENAME' : image['FILENAME'],
                     'REVIEW_CHECK': image['REVIEW_CHECK'],
                     'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                    'HOSPITAL' : image['HOSPITAL'],
+                    'NAME' : image['NAME'],
                     'DIALOG' : DIALOG,
                     'NOTI' : image['NOTI']
                     }
@@ -324,19 +326,21 @@ def hospital():
     USER = session['USER']
 
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    hospitalMRO = myclient["hospitalMRO"]
-    hospital_list = hospitalMRO["hospital_list"]
-    hospitals = hospital_list.find({})
-
     DENTIQUB = myclient["DENTIQUB"]
     hospitaldata = DENTIQUB["hospitaldata"]
     hospitals = []
 
-    for hospital in hospitaldata.find({}).sort("NAME",pymongo.ASCENDING): 
-        if not "WEEKLYIMAGES" in hospital:
-            hospital['WEEKLYIMAGES'] = 'NONE'
-        if not "DAILYIMAGES" in hospital:
-            hospital['DAILYIMAGES'] = 'NONE'
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    print(yesterday)
+
+
+    for hospital in hospitaldata.find({}).sort("NAME",pymongo.ASCENDING):
+        hospital['WEEKLYIMAGES'] = 0
+        for i in range(7):
+            searchday = str(today - timedelta(days=i))
+            if(searchday in hospital) : hospital['WEEKLYIMAGES'] += hospital[searchday]
+        hospital['DAILYIMAGES'] = 0 if not str(today) in hospital else hospital[str(today)]
         if not "최근접속일" in hospital:
             hospital['최근접속일'] = 'NONE'
         if not "최근전송일" in hospital:
@@ -352,6 +356,7 @@ def sending_data():
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     imagedata = DENTIQUB["imagedata"]
+    hospitaldata = DENTIQUB["hospitaldata"]
     dataset = DENTIQUB["dataset"]
 
     if(request.json['ORDER'] == 'REFLASH'):
@@ -398,6 +403,8 @@ def sending_data():
                 }
         
         target['REVIEW_CHECK'] = 'READ'
+        today = str(date.today())
+        hospitaldata.update_one({'NAME':request.json['ID']}, { "$set": {"최근접속일": today} })
         imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": target })
 
         return json.dumps(json.dumps(data))
