@@ -59,20 +59,16 @@ def index():
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def viewer(DATASET_NAME):
-    
-    print('test2')
+
     if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
 
-    print('test3')
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     imagedata = DENTIQUB["imagedata"]
     dataset = DENTIQUB["dataset"]
     
-    print('test4')
-
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
@@ -403,8 +399,9 @@ def sending_data():
                 }
         
         target['REVIEW_CHECK'] = 'READ'
-        today = str(date.today())
-        hospitaldata.update_one({'NAME':request.json['ID']}, { "$set": {"최근접속일": today} })
+        if(request.json['ID'] != 'MANAGER'):
+            today = str(date.today())
+            hospitaldata.update_one({'NAME':request.json['ID']}, { "$set": {"최근접속일": today} })
         imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": target })
 
         return json.dumps(json.dumps(data))

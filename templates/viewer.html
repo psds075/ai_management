@@ -639,6 +639,7 @@
       async function execute() {
         result = await execute1();
         sendToServer(parameter);
+        generatePacket('TARGET', '', '');
         commandLine(FILENAME + ' OPEN');
       }
       execute();
@@ -873,6 +874,7 @@
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = PARAMETER;
       parameter['SETVALUE'] = SETVALUE;
+      parameter['ID'] = "MANAGER";
       sendToServer(parameter);
     }
 
