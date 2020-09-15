@@ -19,6 +19,22 @@ app.secret_key = b'123'
 DEBUG_MODE = True
 __VERSION__ = '0.1.2'
 
+with open('env.json') as json_file:
+    data = json.load(json_file)
+
+BASE_DIR = data['BASE_DIR']
+DB_NAME = ''
+DB_DIR = BASE_DIR + DB_NAME + '/'
+TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK','TIMESTAMP']
+
+
+# 일반 로그인 관련
+@app.route("/main", methods=['GET', 'POST'])
+def main():
+
+    return render_template('main.html')
+
+
 # 일반 로그인 관련
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -44,14 +60,6 @@ def login():
 def logout():
     session['NAME'] = False
     return redirect(url_for('login'))
-
-with open('env.json') as json_file:
-    data = json.load(json_file)
-
-BASE_DIR = data['BASE_DIR']
-DB_NAME = ''
-DB_DIR = BASE_DIR + DB_NAME + '/'
-TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK','TIMESTAMP']
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
