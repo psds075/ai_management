@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.0'
+__VERSION__ = '0.1.1'
 
 # 일반 로그인 관련
 @app.route("/login", methods=['GET', 'POST'])
