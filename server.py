@@ -121,6 +121,8 @@ def viewer(DATASET_NAME):
                     'FILENAME' : image['FILENAME'],
                     'REVIEW_CHECK': image['REVIEW_CHECK'],
                     'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                    'HOSPITAL' : image['HOSPITAL'],
+                    'NAME' : image['NAME']
                     }
             datalist.append(data)
         
