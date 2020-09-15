@@ -17,6 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
+__VERSION__ = 0.1.0
 
 # 일반 로그인 관련
 @app.route("/login", methods=['GET', 'POST'])
@@ -320,7 +321,7 @@ def hospital():
     if not session.get('NAME'):
         return redirect(url_for('login'))
     USER = session['NAME']
-    
+
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     hospitaldata = DENTIQUB["hospitaldata"]
