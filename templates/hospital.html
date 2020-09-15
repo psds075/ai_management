@@ -112,10 +112,10 @@
             <thead>
               <tr>
                 <th style="min-width:80px;">병원명</th>
-                <th style="text-align:center;max-width:20%;">7일간 업로드</th>
+                <th class="hide_in_mobile" style="text-align:center;max-width:20%;">7일간 업로드</th>
                 <th class="hide_in_mobile" style="text-align:center;width:20%;">금일 업로드</th>
-                <th class="hide_in_mobile" style="text-align:center;width:20%;">최근접속일</th>
-                <th style="text-align:center;width:20%;">최근전송일</th>
+                <th style="text-align:center;min-width:130px;">최근접속일</th>
+                <th style="text-align:center;min-width:130px;">최근전송일</th>
               </tr>
             </thead>
             <tbody>
@@ -127,8 +127,8 @@
                 </td>
                 <td class="hide_in_mobile" style=text-align:center;>{{hospital["WEEKLYIMAGES"]}}</td>
                 <td class="hide_in_mobile" style=text-align:center;>{{hospital["DAILYIMAGES"]}}</td>
-                <td class="hide_in_mobile" style=text-align:center;>{{hospital["최근접속일"]}}</td>
-                <td class="hide_in_mobile" style=text-align:center;>{{hospital["최근전송일"]}}</td>
+                <td style=text-align:center;>{{hospital["최근접속일"]}}</td>
+                <td style=text-align:center;>{{hospital["최근전송일"]}}</td>
               </tr>
               {% endfor %}
             </tbody>
