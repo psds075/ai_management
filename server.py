@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.1'
+__VERSION__ = '0.1.2'
 
 # 일반 로그인 관련
 @app.route("/login", methods=['GET', 'POST'])
@@ -117,6 +117,10 @@ def viewer(DATASET_NAME):
                 image['REVIEW_CHECK'] = 'UNREAD'
             if not 'CONFIRM_CHECK' in image:
                 image['CONFIRM_CHECK'] = 'UNCONFIRM'
+            if not 'HOSPITAL' in image:
+                image['HOSPITAL'] = 'UNKNOWN'
+            if not 'NAME' in image:
+                image['NAME'] = 'UNKNOWN'
             data = {
                     'FILENAME' : image['FILENAME'],
                     'REVIEW_CHECK': image['REVIEW_CHECK'],
