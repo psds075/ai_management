@@ -396,10 +396,10 @@ def sending_data():
                 'BBOX_LABEL':target['BBOX_LABEL'],
                 'CONFIRM_CHECK':target['CONFIRM_CHECK'],
                 'PREDICTION_CHECK':target['PREDICTION_CHECK']
-                }
+                } 
         
         target['REVIEW_CHECK'] = 'READ'
-        if(request.json['ID'] != 'MANAGER'):
+        if(request.json['ID'] != 'MANAGER'): #버그픽스
             today = str(date.today())
             hospitaldata.update_one({'NAME':request.json['ID']}, { "$set": {"최근접속일": today} })
         imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": target })
