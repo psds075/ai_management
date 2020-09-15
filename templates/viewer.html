@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>MEDIPARTNER AI MANAGEMENT</title>
+<title>AIQUB AI MANAGEMENT</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../static/css/imageviewer.css" type="text/css" />
@@ -13,6 +13,8 @@
 <script src="../static/js/imageviewer.js"></script>
 <script src="../static/js/bbox_annotator.js"></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
+<script src='https://kit.fontawesome.com/a076d05399.js'></script>
+
 
 <style>
   /* Style the search box */
@@ -121,15 +123,20 @@
     <div id="Demo1" class="w3-animate-left">
       {% for data in datalist %}
       <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
-        text="{{data['FILENAME']}}">
+        text="{{data['FILENAME']}}" style="padding:0px;">
         <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
-          onclick="openImage('{{data['FILENAME']}}')" class="img_name">
+          onclick="openImage('{{data['FILENAME']}}')" class="img_name" style="padding-right:0px;">
           <div class="w3-container" style='padding:0px'>
             <div class="w3-opacity" id="xray"><img src=/database/{{current_dataset}}/{{data['FILENAME']}}
                 style='height:65px;width:130px;'>
             </div>
-            <div class="w3-opacity" id="xray_exp" style='font-size:12px'>
-              {{data['FILENAME'][0:14]}}<br>{{data['FILENAME'][14:25]}}<br>{{data['FILENAME'][25:]}}</div>
+            <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+              <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
+              <br>
+              <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
+              <br>
+              <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
+            </div>
           </div>
         </a>
       </div>
@@ -340,9 +347,9 @@
     var GUIDED_FILENAME = '';
     var DATASET = '{{current_dataset}}';
     var TAB_STATUS = 'UNCONFIRM';
-    if('{{archive_check}}' == 'ARCHIVE'){
+    if ('{{archive_check}}' == 'ARCHIVE') {
       TAB_STATUS = 'ALL';
-    }    
+    }
 
     // LOADING ICON
     function loadingStart() {
