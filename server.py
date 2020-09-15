@@ -317,10 +317,10 @@ def service(DATASET_NAME):
 
 @app.route("/hospital", methods=['GET', 'POST'])
 def hospital():
-    if not session.get('USER'):
+    if not session.get('NAME'):
         return redirect(url_for('login'))
-    USER = session['USER']
-
+    USER = session['NAME']
+    
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     hospitaldata = DENTIQUB["hospitaldata"]
