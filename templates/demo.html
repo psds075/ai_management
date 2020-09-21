@@ -614,7 +614,6 @@
       $('.CURRENT').addClass('READ');
       $('.CURRENT').removeClass('CURRENT');
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
-      var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
 
       function execute1() {
         return new Promise(function (resolve) {
@@ -624,7 +623,7 @@
       }
       async function execute() {
         result = await execute1();
-        sendToServer(parameter);
+        generatePacket('TARGET','','')
         commandLine(FILENAME + ' OPEN');
       }
       execute();
@@ -633,79 +632,85 @@
     function pointing_label(canvas, ctx, img, pointX, pointY, label_text) {
       mouseX = pointX;
       mouseY = pointY;
-      conf_font = "bold 20px Georgia";
+      conf_font = "15px Georgia";
+      ctx.fillStyle = "white";
+      arrow_length = 10;
+      bg_width = 3;
+      arrow_thickness = 2;
+      left_padding = 15;
 
       if (mouseY < 100) {
         if (mouseX < 600) {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.lineTo(mouseX, mouseY + arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.lineTo(mouseX + arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 30, mouseY + 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX + arrow_length * 2, mouseY + arrow_length * 2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + 30, mouseY + 35);
-          ctx.fillText(label_text, mouseX + 30, mouseY + 35);
+          //ctx.strokeText(label_text, mouseX + arrow_length * 2, mouseY + arrow_length * 2 + 5);
+          ctx.fillText(label_text, mouseX + arrow_length * 2, mouseY + arrow_length * 2 + 5);
         } else {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY + 15);
+          ctx.lineTo(mouseX, mouseY + arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.lineTo(mouseX - arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 30, mouseY + 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX - arrow_length * 2, mouseY + arrow_length * 2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
-          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY + 35);
+          //ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length * 2 + 5);
+          ctx.fillText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length * 2 + 5);
         }
       } else {
         if (mouseX < 600) {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.lineTo(mouseX, mouseY - arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 15, mouseY);
+          ctx.lineTo(mouseX + arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX + 30, mouseY - 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX + arrow_length * 2, mouseY - arrow_length * 2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + 30, mouseY - 25);
-          ctx.fillText(label_text, mouseX + 30, mouseY - 25);
+          //ctx.strokeText(label_text, mouseX + arrow_length * 2, mouseY - arrow_length * 2 + 5);
+          ctx.fillText(label_text, mouseX + arrow_length * 2, mouseY - arrow_length * 2 + 5);
         }
         else {
           ctx.beginPath();
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX, mouseY - 15);
+          ctx.lineTo(mouseX, mouseY - arrow_length);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 15, mouseY);
+          ctx.lineTo(mouseX - arrow_length, mouseY);
           ctx.moveTo(mouseX, mouseY);
-          ctx.lineTo(mouseX - 30, mouseY - 30);
-          ctx.lineWidth = 3;
+          ctx.lineTo(mouseX - arrow_length * 2, mouseY - arrow_length * 2);
+          ctx.lineWidth = arrow_thickness;
           ctx.strokeStyle = "white";
           ctx.stroke();
 
-          ctx.lineWidth = 7;
+          ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
-          ctx.fillText(label_text, mouseX - 21 * (label_text.length + 1.5), mouseY - 25);
+          //ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length * 2 + 5);
+          ctx.fillText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length * 2 + 5);
         }
       }
     }
+
 
     function sendCompleteLabeling() {
       var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
@@ -813,28 +818,6 @@
               result = JSON.parse(result);
               generatePacket('PREDICTION', '', '');
               $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-              /*
-              if (result['REVIEW_CHECK'] == 'UNREAD') {
-                generatePacket('PREDICTION', '', '');
-                $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-              } 
-              else {
-                if (result['PREDICTION_CHECK'] == 'PREDICT') {
-                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
-                }
-                else {
-                  $('#PREDICTION_BUTTON').attr("class", "w3-button w3-grey w3-hover-red w3-padding-small");
-                }
-                setTimeout(function () {
-                  if (result['BBOX_LABEL'] == '') {
-                    result['BBOX_LABEL'] = '[]';
-                  }
-                  var labels = JSON.parse(result['BBOX_LABEL']);
-                  loadPrediction(labels);
-                  showPage();
-                }, 100);
-              }
-              */
               if (result['TMJ_LEFT'] == '') {
                 TMJ_LEFT_BUTTON_CONTROL('NONE');
               } else if (parseInt(result['TMJ_LEFT']) > 0.5) {
@@ -947,6 +930,7 @@
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = PARAMETER;
       parameter['SETVALUE'] = SETVALUE;
+      parameter['ID'] = 'MANAGER';
       sendToServer(parameter);
     }
 
