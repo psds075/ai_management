@@ -404,6 +404,7 @@
       parameter['FILENAME'] = FILENAME;
       parameter['PARAMETER'] = 'COMMENT_TEXT';
       parameter['SETVALUE'] = $('#TEXT_AREA').val();
+      parameter['ID'] = {{ID}};
       $('#COMMENT_TEXT').html($('#TEXT_AREA').val());
       sendToServer(parameter);
     });
@@ -576,7 +577,7 @@
         }
         async function execute() {
           result = await execute1();
-          generatePacket('PREDICTION', '', '');
+          generatePacket('PREDICTION', 'FORCE', '');
         }
         execute();
       });
@@ -630,7 +631,6 @@
       $('.CURRENT').removeClass('CURRENT');
       $('.image_frame').css("background-image", "url('" + "/database/" + DATASET + "/" + FILENAME + "')");
       $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('CURRENT');
-      var parameter = { 'ORDER': 'TARGET', 'DATASET': DATASET, 'FILENAME': FILENAME };
       var img = $('#brightness img');
       $('#brightness input').val(50);
       $('#contrast input').val(50);
@@ -645,7 +645,6 @@
       }
       async function execute() {
         result = await execute1();
-        sendToServer(parameter);
         generatePacket('TARGET', '', '');
         commandLine(FILENAME + ' OPEN');
       }
@@ -830,7 +829,6 @@
               annotator_stop = false;
               showPage();
 
-
               var parameter = {};
               parameter['DATASET'] = DATASET;
               parameter['ORDER'] = 'LABEL';
@@ -838,6 +836,7 @@
               parameter['PARAMETER'] = 'BBOX_LABEL';
               parameter['SETVALUE'] = JSON.stringify(annotator.entries);
               parameter['RATIO'] = image_ratio;
+              parameter['ID'] = {{ID}};
 
               async function execute() {
                 result = await sendToServer(parameter);

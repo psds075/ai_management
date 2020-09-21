@@ -72,6 +72,8 @@ def viewer(DATASET_NAME):
     if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
 
+    ID = session['NAME']
+
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
@@ -138,7 +140,7 @@ def viewer(DATASET_NAME):
                     }
             datalist.append(data)
         
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
+    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, ID = ID)
 
 
 @app.route("/comment",methods=['GET', 'POST'])
@@ -146,6 +148,8 @@ def comment():
     
     if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
+
+    ID = session['NAME']
 
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
@@ -204,7 +208,7 @@ def comment():
                 }
         datalist.append(data)
         
-    return render_template('comment.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent)
+    return render_template('comment.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, ID = ID)
 
 
 @app.route("/demo", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
@@ -466,27 +470,34 @@ def sending_data():
         imagedata = DENTIQUB["imagedata"]
         dataset = DENTIQUB["dataset"]
 
-        target_image = os.path.join(BASE_DIR+request.json['DATASET'],request.json['FILENAME'])
-        img = hanimread(target_image) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
-        data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
-        mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
+        query = {'DATASET_NAME':request.json['DATASET'], 'FILENAME':request.json['FILENAME']}
+        target_image = imagedata.find_one(query)
 
-        #병렬 코드
-        boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
-        boxes2 = pool.apply_async(request_prediction, (5102, mydata))
-        #osteoporosis = pool.apply_async(request_prediction, (5201, mydata))
-        boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
-        boxes = bbox_duplicate_check(boxes)
-        VERSION = boxes1.get()['VERSION']
-        ARCHITECTURE = boxes1.get()['ARCHITECTURE']
-        TRAINING_DATE = boxes1.get()['TRAINING_DATE']
+        if('BBOX_PREDICTION' not in target_image) or (request.json['PARAMETER'] == 'FORCE'):
+            imagepath = os.path.join(BASE_DIR+request.json['DATASET'],request.json['FILENAME'])
+            img = hanimread(imagepath) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
+            data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
+            mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
 
-        if(DEBUG_MODE == True):
-            pass #print(boxes)
+            #병렬 코드
+            boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
+            boxes2 = pool.apply_async(request_prediction, (5102, mydata))
+            #osteoporosis = pool.apply_async(request_prediction, (5201, mydata))
+            boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
+            boxes = bbox_duplicate_check(boxes)
+            VERSION = boxes1.get()['VERSION']
+            ARCHITECTURE = boxes1.get()['ARCHITECTURE']
+            TRAINING_DATE = boxes1.get()['TRAINING_DATE']
 
-        #query = {'boxes':boxes, osteoporosis:'osteoporosis'}
-        imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes),'BBOX_VERSION':VERSION, 'BBOX_ARCHITECTURE':ARCHITECTURE,'TRAINING_DATE':TRAINING_DATE}})
+            if(DEBUG_MODE == True):
+                #print(type(boxes), boxes)
+                pass 
 
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes),'BBOX_VERSION':VERSION, 'BBOX_ARCHITECTURE':ARCHITECTURE,'TRAINING_DATE':TRAINING_DATE}})
+
+        else:
+            boxes = json.loads(target_image['BBOX_PREDICTION'])
+            
         return json.dumps(boxes)
 
     if(request.json['ORDER'] == 'START_TRAINING'):
