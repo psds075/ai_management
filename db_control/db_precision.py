@@ -28,20 +28,20 @@ DENTIQUB = myclient["DENTIQUB"]
 imagedata = DENTIQUB["imagedata"]
 dataset = DENTIQUB["dataset"]
 
-DICT_TOTAL = dict()
-DICT_WRONG = dict()
-DICT_RIGHT = dict()
-DICT_PRECISION = dict()
+DICT_TRUETOTAL = dict()
+DICT_FALSETOTAL = dict()
+DICT_FALSENEGATIVE = dict()
+DICT_FALSEPOSITIVE = dict()
+DICT_TRUENEGATIVE = dict()
+DICT_TRUEPOSITIVE = dict()
+DICT_SENSITIVITY = dict()
+DICT_SPECIFICITY = dict()
 
-FROM_DATE = '2020-08-01'
-TO_DATE = '2020-08-20'
+FROM_DATE = '2020-07-01'
+TO_DATE = '2020-09-20'
 
-TOTAL = 0
-RIGHT = 0
-WRONG = 0
-
+#Sensitivity 평가
 for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-    
     if 'BBOX_PREDICTION' in image:
         if((image['TIMESTAMP'] > FROM_DATE) & (image['TIMESTAMP'] < TO_DATE)):
             BBOX_LABEL_PREDICTION = json.loads(image['BBOX_PREDICTION'])
@@ -51,16 +51,42 @@ for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
             
             BBOX_LABEL = json.loads(image['BBOX_LABEL'])
             for LABEL in BBOX_LABEL:
-                if(not LABEL['label'] in DICT_TOTAL):
-                    DICT_TOTAL[LABEL['label']] = 0
-                    DICT_WRONG[LABEL['label']] = 0
-                    DICT_RIGHT[LABEL['label']] = 0
-                DICT_TOTAL[LABEL['label']] += 1
+                if(not LABEL['label'] in DICT_TRUETOTAL):
+                    DICT_TRUETOTAL[LABEL['label']] = 0
+                    DICT_FALSENEGATIVE[LABEL['label']] = 0
+                    DICT_TRUEPOSITIVE[LABEL['label']] = 0
+                DICT_TRUETOTAL[LABEL['label']] += 1
                 if(LABEL['label'] in PREDICTED_LABEL_SET):
-                    DICT_RIGHT[LABEL['label']] += 1
+                    DICT_TRUEPOSITIVE[LABEL['label']] += 1
         
+for label in DICT_TRUETOTAL:
+    DICT_SENSITIVITY[label] = int((DICT_TRUEPOSITIVE[label]*100) / (DICT_TRUETOTAL[label] + 0.01))
+    print("%s Sensitivity : %s %% (%s/%s)" % (label, str(DICT_SENSITIVITY[label]), str(DICT_TRUEPOSITIVE[label]), str(DICT_TRUETOTAL[label])))
+
+#Specificity 평가
+for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+    if 'BBOX_PREDICTION' in image:
+        if((image['TIMESTAMP'] > FROM_DATE) & (image['TIMESTAMP'] < TO_DATE)):
+            BBOX_LABEL_PREDICTION = json.loads(image['BBOX_PREDICTION'])
+            PREDICTED_LABEL_SET = set()
+            for LABEL in BBOX_LABEL_PREDICTION:
+                PREDICTED_LABEL_SET.add(LABEL['label'])
+            
+            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+            for LABEL in BBOX_LABEL:
+                if(not LABEL['label'] in DICT_TRUETOTAL):
+                    DICT_TRUETOTAL[LABEL['label']] = 0
+                    DICT_FALSENEGATIVE[LABEL['label']] = 0
+                    DICT_TRUEPOSITIVE[LABEL['label']] = 0
+                DICT_TRUETOTAL[LABEL['label']] += 1
+                if(LABEL['label'] in PREDICTED_LABEL_SET):
+                    DICT_TRUEPOSITIVE[LABEL['label']] += 1
         
-        
+for label in DICT_FALSETOTAL:
+    DICT_SENSITIVITY[label] = int((DICT_TRUEPOSITIVE[label]*100) / (DICT_TRUETOTAL[label] + 0.01))
+    print("%s Sensitivity : %s %% (%s/%s)" % (label, str(DICT_SENSITIVITY[label]), str(DICT_TRUEPOSITIVE[label]), str(DICT_TRUETOTAL[label])))
+
+
 '''
         
     if 'TIMESTAMP' in image:
@@ -130,9 +156,7 @@ CURRENT_DATE = 'NOW'
 print('CURRENT_PRECISION : ',CURRENT_PRECISION)
 '''
 
-for label in DICT_TOTAL:
-    DICT_PRECISION[label] = int((DICT_RIGHT[label]*100) / (DICT_TOTAL[label] + 0.01))
-    print("%s 정확도 : %s %% (%s/%s)" % (label, str(DICT_PRECISION[label]), str(DICT_RIGHT[label]), str(DICT_TOTAL[label])))
+
     
 #print('CONFIRM_COUNT :',CONFIRM_COUNT)
 #print('PREDICT_COUNT :',PREDICT_COUNT)

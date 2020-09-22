@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.3'
+__VERSION__ = '0.1.4'
 
 with open('env.json') as json_file:
     data = json.load(json_file)

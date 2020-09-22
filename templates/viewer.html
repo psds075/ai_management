@@ -836,7 +836,7 @@
               parameter['PARAMETER'] = 'BBOX_LABEL';
               parameter['SETVALUE'] = JSON.stringify(annotator.entries);
               parameter['RATIO'] = image_ratio;
-              parameter['ID'] = {{ID}};
+              parameter['ID'] = '{{ID}}';
 
               async function execute() {
                 result = await sendToServer(parameter);
