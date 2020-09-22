@@ -341,6 +341,7 @@
     var DEVICEHEIGHT = Math.max(BODY.scrollHeight, BODY.offsetHeight, HTML.clientHeight, HTML.scrollHeight, HTML.offsetHeight);
     var DEVICEWIDTH = Math.max(BODY.scrollWidth, BODY.offsetWidth, HTML.clientWidth, HTML.scrollWidth, HTML.offsetWidth);
     var image_width = DEVICEWIDTH - 650;
+    var image_height = image_width * 0.526;
     var image_ratio = 0;
 
     var FILENAME = '';
@@ -622,7 +623,7 @@
     function openImage(FILENAME_CURRENT) {
 
       FILENAME = FILENAME_CURRENT;
-      actual_image_width(FILENAME);
+      
       annotator_stop = true;
       $('#main_img').css("width", DEVICEWIDTH + 'px');
       $('#img3').attr("src", "/database/" + DATASET + "/" + FILENAME);
@@ -636,6 +637,8 @@
       $('#contrast input').val(50);
       TweenMax.set('#main_img', { '-webkit-filter': 'brightness(' + 100 + '%' + ')' });
       TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + 100 + '%' + ')' });
+
+      actual_image_width(FILENAME);
 
       function execute1() {
         return new Promise(function (resolve) {
@@ -734,7 +737,12 @@
           width: image.naturalWidth,
           height: image.naturalHeight
         };
-        image_ratio = image_width / dimension.width;
+        if(dimension.width/dimension.height < 1.9){
+          image_ratio = image_height / dimension.height;
+        }
+        else{
+          image_ratio = image_width / dimension.width;
+        }
       };
     }
 
