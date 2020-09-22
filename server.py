@@ -54,6 +54,8 @@ def login():
             session['NAME'] = hospitaldata.find_one({'ID':request.form['id']})['NAME']
             return redirect(url_for('service'))
 
+    session.permanent = True
+
     return render_template('login.html')
 
 @app.route('/logout')
