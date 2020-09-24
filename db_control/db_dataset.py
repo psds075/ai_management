@@ -23,9 +23,9 @@ if not dataset.find_one(query):
 #data = dataset.find_one(query)
 #print(data)
 
-# 전체 데이터 읽기
-#for data in dataset.find({}):
-#    print(data)
+#전체 데이터 읽기
+for data in dataset.find({}):
+    print(data['NAME'])
 
 
 '''

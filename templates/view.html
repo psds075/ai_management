@@ -754,10 +754,11 @@
       mouseX = pointX;
       mouseY = pointY;
       conf_font = "15px Georgia";
+      ctx.fillStyle = "white";
       arrow_length = 10;
       bg_width = 3;
       arrow_thickness = 2;
-      left_padding = 14;
+      left_padding = 15;
 
       if (mouseY < 100) {
         if (mouseX < 600) {
@@ -774,7 +775,7 @@
 
           ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + arrow_length * 2, mouseY + arrow_length * 2 + 5);
+          //ctx.strokeText(label_text, mouseX + arrow_length * 2, mouseY + arrow_length * 2 + 5);
           ctx.fillText(label_text, mouseX + arrow_length * 2, mouseY + arrow_length * 2 + 5);
         } else {
           ctx.beginPath();
@@ -790,7 +791,7 @@
 
           ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length * 2 + 5);
+          //ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length * 2 + 5);
           ctx.fillText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY + arrow_length * 2 + 5);
         }
       } else {
@@ -808,7 +809,7 @@
 
           ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX + arrow_length * 2, mouseY - arrow_length * 2 + 5);
+          //ctx.strokeText(label_text, mouseX + arrow_length * 2, mouseY - arrow_length * 2 + 5);
           ctx.fillText(label_text, mouseX + arrow_length * 2, mouseY - arrow_length * 2 + 5);
         }
         else {
@@ -825,7 +826,7 @@
 
           ctx.lineWidth = bg_width;
           ctx.font = conf_font;
-          ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length * 2 + 5);
+          //ctx.strokeText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length * 2 + 5);
           ctx.fillText(label_text, mouseX - left_padding * (label_text.length + 1.5), mouseY - arrow_length * 2 + 5);
         }
       }

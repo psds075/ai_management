@@ -38,7 +38,7 @@ for image in imagedata.find(query):
 #data = imagedata.find_one(query)
 #print(data)
 
-
+'''
 # Dialog 추가(PUSH)하기 
 now = datetime.now()
 dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
@@ -48,7 +48,7 @@ imagedata.update_one(query, newvalues)
 
 data = imagedata.find_one(query)
 print(data)
-
+'''
 
 '''
 # Dialog 리셋하기 
@@ -87,3 +87,49 @@ query = {'BBOX_PREDICTION':{'$exists':True}}
 for image in imagedata.find(query):
     print(image['FILENAME'], image['DATASET_NAME'])
 '''
+
+#전체 DB에서 가로 세로 비율이 1.9 이하인 이미지를 찾아서 CONFIRM 수정하기
+
+# -*- coding: utf-8 -*-
+import os
+import json
+import cv2
+import pymongo
+
+
+with open('env.json') as json_file:
+    data = json.load(json_file)
+
+BASE_DIR = data['BASE_DIR']
+
+myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+DENTIQUB = myclient["DENTIQUB"]
+hospitaldata = DENTIQUB["hospitaldata"]
+imagedata = DENTIQUB["imagedata"]
+dataset = db["dataset"]
+
+count = 0
+
+
+#전체 데이터 읽기
+for data in dataset.find({}):
+    
+    DATASET_NAME = data['NAME']
+    for image in imagedata.find({'DATASET_NAME' : DATASET_NAME, 'CONFIRM_CHECK':'CONFIRM'}):
+        filepath = BASE_DIR + DATASET_NAME + '/' + image['FILENAME']
+        if(os.path.isfile(filepath)):
+            img = cv2.imread(filepath)
+            height, width, channels = img.shape
+            if(width/height < 1.88):
+                count += 1
+                print(width/height)
+                #query = {'FILENAME': image['FILENAME'], 'DATASET_NAME':DATASET_NAME}
+                #newvalues = { "$set": { "CONFIRM_CHECK": 'UNCONFIRM' } }
+                #imagedata.update_one(query, newvalues)
+
+print('change', count)
+
+
+
+
+
