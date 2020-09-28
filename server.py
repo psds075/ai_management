@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.9'
+__VERSION__ = '0.1.8'
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -30,16 +30,9 @@ TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OST
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    if 'NAME' in session:
-        if(session['NAME'] == 'MANAGER'):
-            redirect('viewer')
-        elif(session['NAME'] == 'DEMO'):
-            redirect('demo')
-        else:
-            redirect('service')
-    else:
-        redirect('main')
+    return render_template('login.html')
 
+    
 
 # 일반 로그인 관련
 @app.route("/main", methods=['GET', 'POST'])
