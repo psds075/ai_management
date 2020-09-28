@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.8'
+__VERSION__ = '0.1.9'
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -39,9 +39,6 @@ def index():
             redirect('service')
     else:
         redirect('main')
-
-    return render_template('login.html')
-
 
 
 # 일반 로그인 관련
