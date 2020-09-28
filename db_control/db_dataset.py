@@ -23,9 +23,11 @@ if not dataset.find_one(query):
 #data = dataset.find_one(query)
 #print(data)
 
+'''
 #전체 데이터 읽기
 for data in dataset.find({}):
     print(data['NAME'])
+'''
 
 
 '''
@@ -74,6 +76,7 @@ for data in dataset.find(query):
     print(data)
 '''
 
+
 '''
 # 해당 날짜에 UNCONFIRM이 없으면 CONFIRM 시키기
 DATASET_NAME = '20200908'
@@ -88,4 +91,15 @@ else:
     newvalues = { "$set": { "STATUS": "INSERTED" } }
     dataset.update_one(query, newvalues)
 '''
+
+'''
+# CONFIRM 한 데이터 수
+print(imagedata.count_documents({"CONFIRM_CHECK":"CONFIRM"}))
+'''
+
+
+
+
+
+
 

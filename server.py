@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.7'
+__VERSION__ = '0.1.8'
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -35,8 +35,19 @@ def main():
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
     hospitaldata = DENTIQUB["hospitaldata"]
-    
-    return render_template('main.html')
+    imagedata = DENTIQUB["imagedata"]
+
+    today = str(date.today())
+    today_total = 0
+    for hospital in hospitaldata.find({}):
+        if(today in hospital):
+            today_total += hospital[today]
+
+    total_hospital = hospitaldata.count_documents({})
+    total_confirm = imagedata.count_documents({"CONFIRM_CHECK":"CONFIRM"})
+    STATISTICS = {'today_total':today_total, 'total_hospital':total_hospital, 'total_confirm':total_confirm }
+
+    return render_template('main.html', STATISTICS = STATISTICS)
 
 
 # 일반 로그인 관련
@@ -362,7 +373,6 @@ def hospital():
     today = date.today()
     yesterday = today - timedelta(days=1)
     print(yesterday)
-
 
     for hospital in hospitaldata.find({}).sort("NAME",pymongo.ASCENDING):
         hospital['WEEKLYIMAGES'] = 0

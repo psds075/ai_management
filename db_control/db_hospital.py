@@ -32,10 +32,11 @@ query = {'NAME' : NAME, 'ID': ID, 'PASSWORD' : PASSWORD}
 if(not hospitaldata.find_one({'NAME':NAME})):
     hospitaldata.insert_one(query)
 '''
-
+'''
 # HOSPITAL DB Read
 for hospital in hospitaldata.find():
     print(hospital)
+'''
 
 '''
 # HOSPITAL DB Delete
@@ -63,6 +64,39 @@ hospitaldata.update_one(myquery, newvalues)
 today = date.today()
 yesterday = today - timedelta(days=1)
 print(yesterday)
+
 '''
+
+'''
+# 병원 별 접속 통계
+for hospital in hospitaldata.find({}).sort("NAME",pymongo.ASCENDING):
+    hospital['WEEKLYIMAGES'] = 0
+    for i in range(7):
+        searchday = str(today - timedelta(days=i))
+        if(searchday in hospital) : hospital['WEEKLYIMAGES'] += hospital[searchday]
+    hospital['DAILYIMAGES'] = 0 if not str(today) in hospital else hospital[str(today)]
+    if not "최근접속일" in hospital:
+        hospital['최근접속일'] = 'NONE'
+    if not "최근전송일" in hospital:
+        hospital['최근전송일'] = 'NONE'
+    hospitals.append(hospital)
+'''
+
+'''
+# 금일 전송 데이터 수
+today = str(date.today())
+today_total = 0
+for hospital in hospitaldata.find({}):
+    if(today in hospital):
+        today_total += hospital[today]
+
+print(today_total)
+print(hospitaldata.count_documents({}))
+'''
+
+
+
+
+
 
 
