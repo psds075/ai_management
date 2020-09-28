@@ -59,9 +59,10 @@ newvalues = { "$set": { "최근전송일": NOW_STRING } }
 hospitaldata.update_one(myquery, newvalues)
 '''
 
+'''
 today = date.today()
 yesterday = today - timedelta(days=1)
 print(yesterday)
-
+'''
 
 
