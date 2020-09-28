@@ -28,6 +28,22 @@ DB_DIR = BASE_DIR + DB_NAME + '/'
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK','TIMESTAMP']
 
 
+@app.route("/", methods=['GET', 'POST'])
+def index():
+    if 'NAME' in session:
+        if(session['NAME'] == 'MANAGER'):
+            redirect('viewer')
+        elif(session['NAME'] == 'DEMO'):
+            redirect('demo')
+        else:
+            redirect('service')
+    else:
+        redirect('main')
+
+    return render_template('login.html')
+
+
+
 # 일반 로그인 관련
 @app.route("/main", methods=['GET', 'POST'])
 def main():
@@ -85,10 +101,6 @@ def login():
 def logout():
     session['NAME'] = False
     return redirect(url_for('login'))
-
-@app.route("/", methods=['GET', 'POST'])
-def index():
-    return render_template('login.html')
 
 @app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
