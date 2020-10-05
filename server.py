@@ -239,64 +239,6 @@ def comment():
     return render_template('comment.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, ID = ID)
 
 
-@app.route("/demo", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
-@app.route("/demo/<string:DATASET_NAME>", methods=['GET', 'POST'])
-def demo(DATASET_NAME):
-    
-    if not session['NAME'] == 'DEMO':
-        return redirect(url_for('login'))
-
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
-    
-    with open('label_dict.json',encoding = 'utf-8') as json_file:
-        data = json.load(json_file)
-        LABEL_DICT = data['LABEL_DICT']
-
-    response = requests.post('http://dentiqub.iptime.org:5001/api')
-    training_status = json.loads(response.text)['STATUS']
-    if(len(training_status.split(' '))==4):
-        training_percent = training_status.split(' ')[2]
-    else:
-        training_percent = 0
-    datasetlist = []
-    archivelist = []
-
-    for data in dataset.find({'STATUS':'ARCHIVE'}).sort("NAME",pymongo.DESCENDING):
-        archivelist.append({'DATASET_NAME':data['NAME']})
-
-    for data in dataset.find({'STATUS':'INSERTED'}).sort("NAME",pymongo.DESCENDING):
-        datasetlist.append({'DATASET_NAME':data['NAME']})
-
-    if DATASET_NAME == 'NONE':
-        datalist = []
-        archive_check = 'NONE'
-
-    else:
-        archive_check = dataset.find_one({'NAME':DATASET_NAME})['STATUS']
-        if(len(os.listdir(BASE_DIR+DATASET_NAME)) != imagedata.find({'DATASET_NAME' : DATASET_NAME}).count()):
-            for filename in os.listdir(BASE_DIR+DATASET_NAME):
-                if not imagedata.find_one({'FILENAME':filename}):
-                    imagedata.insert_one({'FILENAME':filename,'DATASET_NAME':DATASET_NAME, 'REVIEW_CHECK': 'UNREAD','CONFIRM_CHECK':'UNCONFIRM'})
-        datalist = []
-        for image in imagedata.find({'DATASET_NAME' : DATASET_NAME}):
-            if not 'REVIEW_CHECK' in image:
-                image['REVIEW_CHECK'] = 'UNREAD'
-            if not 'CONFIRM_CHECK' in image:
-                image['CONFIRM_CHECK'] = 'UNCONFIRM'
-            data = {
-                    'FILENAME' : image['FILENAME'],
-                    'REVIEW_CHECK': image['REVIEW_CHECK'],
-                    'CONFIRM_CHECK': image['CONFIRM_CHECK'],
-                    }
-            datalist.append(data)
-        
-    return render_template('demo.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check)
-
-
 @app.route("/service", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/service/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def service(DATASET_NAME):
@@ -544,12 +486,6 @@ def sending_data():
         PRECISION_DATA = prediction_statistics()
         return json.dumps({'LABEL_RANK':LABEL_RANK, 'PRECISION_DATA':PRECISION_DATA})
 
-    if(request.json['ORDER'] == 'STATISTICS_DEMO'):
-        LABEL_RANK = label_statistics_demo()
-        PRECISION_DATA = prediction_statistics_demo()
-        print('Sending Complete.')
-        return json.dumps({'LABEL_RANK':LABEL_RANK, 'PRECISION_DATA':PRECISION_DATA})
-
 @app.route('/database/<path:path>')
 def database(path):
     return send_from_directory(BASE_DIR, path) 
@@ -582,74 +518,10 @@ def label_statistics():
 
     return LABEL_RANK
 
-def label_statistics_demo():
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB_20200712"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
-
-    LABEL_LIST = []
-
-    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-        if ('BBOX_LABEL' in image):
-            if((image['BBOX_LABEL']) == ''):
-                image['BBOX_LABEL'] = '[]'
-            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
-            for j in range(len(BBOX_LABEL)):
-                class_name = str(BBOX_LABEL[j]['label'])
-                LABEL_LIST.append(class_name)
-
-    LABEL_COUNTER = collections.Counter(LABEL_LIST)
-    LABEL_RANK = []
-
-    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], reverse = True):
-        LABEL_RANK.append((key, value))
-
-    return LABEL_RANK
-
 def prediction_statistics():
 
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
-
-    CONFIRM_COUNT = 0
-    PREDICT_COUNT = 0
-    NO_PREDICT_COUNT = 0
-    NOT_CHECKED = 0
-
-    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-        CONFIRM_COUNT+=1
-        if 'PREDICTION_CHECK' in image:
-            if (image['PREDICTION_CHECK'] == 'PREDICT'):
-                PREDICT_COUNT+=1
-            if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
-                NO_PREDICT_COUNT+=1
-            if (image['PREDICTION_CHECK'] == ''):
-                NOT_CHECKED+=1
-        
-
-    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(PREDICT_COUNT+NO_PREDICT_COUNT+NOT_CHECKED+0.1)*100)
-    CURRENT_DATA_AMOUNT = CONFIRM_COUNT
-    CURRENT_DATE = 'NOW'
-
-    # 디렉토리 불러오기
-    with open('precision_record.json') as json_file:
-        data = json.load(json_file)
-        PRECISION_RECORD = data['PRECISION_RECORD']
-
-    PRECISION_DATA = []
-    for PRECISION in PRECISION_RECORD:
-        PRECISION_DATA.append((PRECISION[0],PRECISION[1], PRECISION[2]))
-    PRECISION_DATA.append((CURRENT_DATE, CURRENT_DATA_AMOUNT, str(CURRENT_PRECISION) + '%'))
-
-    return PRECISION_DATA
-
-def prediction_statistics_demo():
-
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB_20200712"]
     imagedata = DENTIQUB["imagedata"]
     dataset = DENTIQUB["dataset"]
 
