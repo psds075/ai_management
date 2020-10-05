@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.9'
+__VERSION__ = '0.1.10'
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -32,7 +32,7 @@ TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OST
 def index():
     if 'NAME' in session:
         if(session['NAME'] == 'MANAGER'):
-            return redirect(url_for('viewer'))
+            return redirect(url_for('train'))
         elif(session['NAME'] == 'DEMO'):
             return redirect(url_for('demo'))
         elif(session['NAME'] == False):
@@ -76,7 +76,7 @@ def login():
     if request.method == 'POST':
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'MANAGER'
-            return redirect(url_for('viewer'))
+            return redirect(url_for('train'))
         elif(request.form['id']=='demo' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'DEMO'
             return redirect(url_for('demo'))
@@ -93,9 +93,9 @@ def logout():
     session['NAME'] = False
     return redirect(url_for('login'))
 
-@app.route("/viewer", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
-@app.route("/viewer/<string:DATASET_NAME>", methods=['GET', 'POST'])
-def viewer(DATASET_NAME):
+@app.route("/train", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
+@app.route("/train/<string:DATASET_NAME>", methods=['GET', 'POST'])
+def train(DATASET_NAME):
 
     if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
@@ -168,7 +168,7 @@ def viewer(DATASET_NAME):
                     }
             datalist.append(data)
         
-    return render_template('viewer.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, ID = ID)
+    return render_template('train.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, ID = ID)
 
 
 @app.route("/comment",methods=['GET', 'POST'])

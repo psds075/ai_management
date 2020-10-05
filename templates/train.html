@@ -427,7 +427,7 @@
           }, 300);
         }
         else {
-          window.location.href = "/viewer";
+          window.location.href = "/train";
         }
       }
     });
@@ -657,7 +657,7 @@
     function sendCompleteLabeling() {
       var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
       sendToServer(parameter);
-      window.location.href = "/viewer";
+      window.location.href = "/train";
     }
 
     function openTab(tabName) {
@@ -906,7 +906,7 @@
     }
 
     function SELECT_DATASET(DATASET_NAME) {
-      window.location.href = "/viewer/" + DATASET_NAME;
+      window.location.href = "/train/" + DATASET_NAME;
     }
 
     function SHOW_ARCHIVE() {
@@ -923,7 +923,7 @@
     }
 
     function SELECT_ARCHIVE(DATASET_NAME) {
-      window.location.href = "/viewer/" + DATASET_NAME;
+      window.location.href = "/train/" + DATASET_NAME;
     }
 
     // Typewriting Function
