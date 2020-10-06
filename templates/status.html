@@ -67,16 +67,26 @@
             <th style="text-align:center;width:80px;">번호</th>
             <th style="text-align:center;min-width:130px;">항목</th>
             <th style="text-align:center;min-width:130px;">데이터 수</th>
-            <th style="text-align:center;min-width:130px;">학습모드</th>
+            <th style="text-align:center;width:130px;">학습모드</th>
           </tr>
         </thead>
         <tbody>
           {% for LABEL in LABEL_TABLE %}
-          <tr>
+          <tr class="{{'table-secondary' if LABEL[1] < 50}}">
             <td style=text-align:center;>{{loop.index}}</td>
             <td style=text-align:center;>{{LABEL[0]}}</td>
             <td style=text-align:center;>{{LABEL[1]}}</td>
-            <td style=text-align:center;>{{'ON' if LABEL[1] > 50 else 'OFF'}}</td>
+            <td style="text-align:center;vertical-align: middle;">
+              {% if LABEL[1] > 50 %}
+              <button class="btn btn-primary btn-sm" href="#">
+                ON
+              </button>
+              {% else %}
+              <button class="btn btn-danger btn-sm" href="#">
+                OFF
+              </button>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>

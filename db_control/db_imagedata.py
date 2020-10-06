@@ -132,6 +132,9 @@ print('change', count)
 '''
 
 
+
+
+# 정확도 통계 확인
 TODAY_STRING = datetime.datetime.now().strftime("%Y%m%d")
 
 DICT_TRUETOTAL = dict()
@@ -194,7 +197,9 @@ for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
             for LABEL in BBOX_PREDICTION:
                 PREDICTION_LABEL_SET.add(LABEL['label'])
                 
-            for DISEASE in list(DICT_TRUEPOSITIVE.keys()):
+            DISEASE_DICT = dict(filter(lambda elem:elem[1]>=1, DICT_TRUEPOSITIVE.items()))
+                
+            for DISEASE in list(DISEASE_DICT.keys()):
                 if(DISEASE not in GROUNDTRUTH_LABEL_SET):
                     DICT_NEGATIVETOTAL[DISEASE] += 1
                     if(DISEASE not in PREDICTION_LABEL_SET):
@@ -240,8 +245,11 @@ for label in sorted(DICT_SENSITIVITY.items(), key=lambda x: x[1], reverse=True):
     else:
         print("%s Precision : %s %% (%s/%s)" % (label, str(DICT_PRECISION[label]), str(DICT_TRUEPOSITIVE[label]), str(DICT_POSITIVETOTAL[label])))
 
+print()
+print()
 
-
+print('총 입력 데이터 수 :', imagedata.count_documents({}))
+print('CONFIRM 수 :', imagedata.count_documents({'CONFIRM_CHECK':"CONFIRM"}))
 
 
 

@@ -1,44 +1,7 @@
 {% extends "base.html" %}
 
 {% block side %}
-
-<!-- Sidebar Menu -->
-<nav class="mt-2">
-  <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-    <!-- Add icons to the links using the .nav-icon class
-       with font-awesome or any other icon font library -->
-
-    <li class="nav-item has-treeview">
-      <a href="/status" class="nav-link">
-        <i class="nav-icon fas fa-chart-pie"></i>
-        <p>
-          데이터 수집 현황
-        </p>
-      </a>
-    </li>
-
-    <li class="nav-item has-treeview">
-      <a href="/model" class="nav-link active">
-        <i class="nav-icon fas fa-chart-pie"></i>
-        <p>
-          학습모델 관리
-        </p>
-      </a>
-    </li>
-
-    <li class="nav-item has-treeview">
-      <a href="/train" class="nav-link">
-        <i class="nav-icon fas fa-chart-pie"></i>
-        <p>
-          데이터 입력하기
-        </p>
-      </a>
-    </li>
-
-  </ul>
-</nav>
-<!-- /.sidebar-menu -->
-
+{{super()}}
 {% endblock %}
 
 {% block contents %}
@@ -65,7 +28,7 @@
           <span class="info-box-icon bg-blue"><i class="far fa-clone"></i></span>
           <div class="info-box-content">
             <span class="info-box-text">최근 학습일</span>
-            <span class="info-box-number">2020. 10. 04.</span>
+            <span class="info-box-number">N/A</span>
           </div>
           <!-- /.info-box-content -->
         </div>
@@ -74,11 +37,11 @@
       <!-- /.col -->
       <div class="col-md-3 col-sm-6 col-xs-12">
         <div class="info-box">
-          <span class="info-box-icon bg-red"><i class="fa fa-google-plus"></i></span>
+          <span class="info-box-icon bg-red"><i class="far fa-clone"></i></span>
 
           <div class="info-box-content">
             <span class="info-box-text">총 입력 데이터 수</span>
-            <span class="info-box-number">303</span>
+            <span class="info-box-number">{{TOTAL_NUMBER}}</span>
           </div>
           <!-- /.info-box-content -->
         </div>
@@ -91,20 +54,21 @@
 
       <div class="col-md-3 col-sm-6 col-xs-12">
         <div class="info-box">
-          <span class="info-box-icon bg-green"><i class="ion ion-ios-cart-outline"></i></span>
+          <span class="info-box-icon bg-green"><i class="far fa-clone"></i></span>
 
           <div class="info-box-content">
             <span class="info-box-text">CONFIRM 데이터 수</span>
-            <span class="info-box-number">74</span>
+            <span class="info-box-number">{{COMFIRM_NUMBER}}</span>
           </div>
           <!-- /.info-box-content -->
         </div>
         <!-- /.info-box -->
       </div>
+
       <!-- /.col -->
       <div class="col-md-3 col-sm-6 col-xs-12">
         <div class="info-box">
-          <span class="info-box-icon bg-yellow"><i class="ion ion-ios-people-outline"></i></span>
+          <span class="info-box-icon bg-yellow"><i class="far fa-clone"></i></span>
 
           <div class="info-box-content">
             <span class="info-box-text">직전 평균 정확도</span>
@@ -144,12 +108,12 @@
             <td style="text-align:center;vertical-align:middle;"><span class="label label-success">TRAINING</span></td>
             <td class="hide_in_mobile">
               <div class="progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-volumenow="57" aria-volumemin="0"
-                  aria-volumemax="100" style="width: 57%">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                  aria-volumenow="57" aria-volumemin="0" aria-volumemax="100" style="width: {{training_percent}}%">
                 </div>
               </div>
               <small>
-                57% Complete
+                {{training_status}}
               </small>
             </td>
             <td style="text-align:center;vertical-align:middle;"><button type="button"
@@ -181,16 +145,32 @@
             <th style="text-align:center;width:80px;">번호</th>
             <th style="text-align:center;min-width:130px;">항목</th>
             <th style="text-align:center;min-width:130px;">데이터 수</th>
-            <th style="text-align:center;min-width:130px;">학습모드</th>
+            <th style="text-align:center;width:130px;">SENSITIVITY</th>
+            <th style="text-align:center;width:130px;">SPECIFICITY</th>
+            <th style="text-align:center;width:130px;">PRECISION</th>
+            <th style="text-align:center;width:130px;">학습모드</th>
           </tr>
         </thead>
         <tbody>
           {% for LABEL in LABEL_TABLE %}
-          <tr>
+          <tr class="{{'table-secondary' if LABEL[1] < 50}}">
             <td style=text-align:center;>{{loop.index}}</td>
             <td style=text-align:center;>{{LABEL[0]}}</td>
             <td style=text-align:center;>{{LABEL[1]}}</td>
-            <td style=text-align:center;>{{'ON' if LABEL[1] > 50 else 'OFF'}}</td>
+            <td style=text-align:center;>{{SENSITIVITY[LABEL[0]]}}%</td>
+            <td style=text-align:center;>{{SPECIFICITY[LABEL[0]]}}%</td>
+            <td style=text-align:center;>{{PRECISION[LABEL[0]]}}%</td>
+            <td style="text-align:center;vertical-align: middle;">
+              {% if LABEL[1] > 50 %}
+              <button class="btn btn-primary btn-sm" href="#">
+                ON
+              </button>
+              {% else %}
+              <button class="btn btn-danger btn-sm" href="#">
+                OFF
+              </button>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -203,4 +183,16 @@
   <!-- /.content -->
 </div>
 <!-- /.content-wrapper -->
+{% endblock %}
+
+{% block SCRIPT %}
+<script>
+  function TRAINING_BUTTON_CONTROL() {
+    var training_check = confirm("TRAINING 하시겠습니까?");
+    if (training_check == true) {
+      generatePacket('START_TRAINING', '', '');
+      window.location.reload();
+    }
+  }
+</script>
 {% endblock %}

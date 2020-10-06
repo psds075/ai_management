@@ -331,7 +331,183 @@ def hospital():
             hospital['최근전송일'] = 'NONE'
         hospitals.append(hospital)
 
-    return render_template('hospital.html', USER=USER, hospitals = hospitals)
+    return render_template('hospital.html', USER=USER, Title = '병원 관리', hospitals = hospitals)
+
+
+@app.route("/status", methods=['GET', 'POST'])
+def status():
+    if not session.get('ID'):
+        return redirect(url_for('login'))
+    USER = session['ID']
+
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+
+    # 레이블 데이터 불러오기
+    import collections
+    LABEL_LIST = []
+
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if ('BBOX_LABEL' in image):
+            if((image['BBOX_LABEL']) == ''):
+                image['BBOX_LABEL'] = '[]'
+            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+            for j in range(len(BBOX_LABEL)):
+                class_name = str(BBOX_LABEL[j]['label'])
+                LABEL_LIST.append(class_name)
+
+    LABEL_COUNTER = collections.Counter(LABEL_LIST)
+    LABEL_TABLE = []
+
+    # 값으로 정렬
+    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[0], reverse = False):
+        LABEL_TABLE.append((key, value))
+
+    return render_template('status.html', USER=USER, Title = '데이터 수집 현황', LABEL_TABLE=LABEL_TABLE)
+
+
+@app.route("/model", methods=['GET', 'POST'])
+def model():
+    if not session.get('ID'):
+        return redirect(url_for('login'))
+    USER = session['ID']
+
+    # Connection
+    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+    DENTIQUB = myclient["DENTIQUB"]
+    imagedata = DENTIQUB["imagedata"]
+
+    # 레이블 데이터 불러오기
+    import collections
+    LABEL_LIST = []
+
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if ('BBOX_LABEL' in image):
+            if((image['BBOX_LABEL']) == ''):
+                image['BBOX_LABEL'] = '[]'
+            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+            for j in range(len(BBOX_LABEL)):
+                class_name = str(BBOX_LABEL[j]['label'])
+                LABEL_LIST.append(class_name)
+
+    LABEL_COUNTER = collections.Counter(LABEL_LIST)
+    LABEL_TABLE = []
+
+    # 값으로 정렬
+    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[0], reverse = False):
+        LABEL_TABLE.append((key, value))
+
+    # 정확도 통계 확인
+    TODAY_STRING = datetime.now().strftime("%Y%m%d")
+
+    DICT_TRUETOTAL = dict()
+    DICT_NEGATIVETOTAL = dict()
+    DICT_POSITIVETOTAL = dict()
+    DICT_TRUENEGATIVE = dict()
+    DICT_TRUEPOSITIVE = dict()
+
+    DICT_SENSITIVITY = dict()
+    DICT_SPECIFICITY = dict()
+    DICT_PRECISION = dict()
+
+    today = str(date.today())
+    FROM_DATE = '2020-07-01'
+    TO_DATE = today
+
+
+    #Sensitivity 평가
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if 'BBOX_PREDICTION' in image:
+            if((image['TIMESTAMP'] > FROM_DATE) & (image['TIMESTAMP'] < TO_DATE)):
+                BBOX_LABEL_PREDICTION = json.loads(image['BBOX_PREDICTION'])
+                PREDICTED_LABEL_SET = set()
+                for LABEL in BBOX_LABEL_PREDICTION:
+                    PREDICTED_LABEL_SET.add(LABEL['label'])
+                
+                BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+                for LABEL in BBOX_LABEL:
+                    if(not LABEL['label'] in DICT_TRUETOTAL):
+                        DICT_TRUETOTAL[LABEL['label']] = 0
+                        DICT_TRUEPOSITIVE[LABEL['label']] = 0
+                        DICT_NEGATIVETOTAL[LABEL['label']] = 0
+                        DICT_TRUENEGATIVE[LABEL['label']] = 0
+                        DICT_POSITIVETOTAL[LABEL['label']] = 0
+                    DICT_TRUETOTAL[LABEL['label']] += 1
+                    if(LABEL['label'] in PREDICTED_LABEL_SET):
+                        DICT_TRUEPOSITIVE[LABEL['label']] += 1
+
+    for label in DICT_TRUETOTAL:
+        DICT_SENSITIVITY[label] = int((DICT_TRUEPOSITIVE[label]*100) / (DICT_TRUETOTAL[label] + 0.001))
+
+    #Specificity 평가
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if 'BBOX_PREDICTION' in image:
+            if((image['TIMESTAMP'] > FROM_DATE) & (image['TIMESTAMP'] < TO_DATE)):
+                
+                BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+                BBOX_PREDICTION = json.loads(image['BBOX_PREDICTION'])
+                GROUNDTRUTH_LABEL_SET = set()
+                PREDICTION_LABEL_SET = set()
+                for LABEL in BBOX_LABEL:
+                    GROUNDTRUTH_LABEL_SET.add(LABEL['label'])
+                for LABEL in BBOX_PREDICTION:
+                    PREDICTION_LABEL_SET.add(LABEL['label'])
+                    
+                DISEASE_DICT = dict(filter(lambda elem:elem[1]>=1, DICT_TRUEPOSITIVE.items()))
+                    
+                for DISEASE in list(DISEASE_DICT.keys()):
+                    if(DISEASE not in GROUNDTRUTH_LABEL_SET):
+                        DICT_NEGATIVETOTAL[DISEASE] += 1
+                        if(DISEASE not in PREDICTION_LABEL_SET):
+                            DICT_TRUENEGATIVE[DISEASE] += 1
+
+    for label in sorted(DICT_SENSITIVITY.items(), key=lambda x: x[1], reverse=True):
+        label = label[0]
+        DICT_SPECIFICITY[label] = int((DICT_TRUENEGATIVE[label]*100) / (DICT_NEGATIVETOTAL[label] + 0.001))
+
+    #Precision 평가
+    for DISEASE in list(DICT_TRUEPOSITIVE.keys()):
+        DICT_TRUEPOSITIVE[DISEASE] = 0
+
+    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+        if 'BBOX_PREDICTION' in image:
+            if((image['TIMESTAMP'] > FROM_DATE) & (image['TIMESTAMP'] < TO_DATE)):
+                
+                BBOX_LABEL = json.loads(image['BBOX_LABEL'])
+                BBOX_PREDICTION = json.loads(image['BBOX_PREDICTION'])
+                GROUNDTRUTH_LABEL_SET = set()
+                PREDICTION_LABEL_SET = set()
+                for LABEL in BBOX_LABEL:
+                    GROUNDTRUTH_LABEL_SET.add(LABEL['label'])
+                for LABEL in BBOX_PREDICTION:
+                    PREDICTION_LABEL_SET.add(LABEL['label'])
+                    
+                for DISEASE in PREDICTION_LABEL_SET:
+                    DICT_POSITIVETOTAL[DISEASE] += 1
+                    if(DISEASE in GROUNDTRUTH_LABEL_SET):
+                        DICT_TRUEPOSITIVE[DISEASE] += 1
+
+
+    for label in sorted(DICT_SENSITIVITY.items(), key=lambda x: x[1], reverse=True):
+        label = label[0]
+        DICT_PRECISION[label] = int((DICT_TRUEPOSITIVE[label]*100) / (DICT_POSITIVETOTAL[label] + 0.001))
+
+    COMFIRM_NUMBER = imagedata.count_documents({'CONFIRM_CHECK':"CONFIRM"})
+    TOTAL_NUMBER = imagedata.count_documents({})
+
+    print(COMFIRM_NUMBER, TOTAL_NUMBER)
+
+    response = requests.post('http://dentiqub.iptime.org:5001/api')
+    training_status = json.loads(response.text)['STATUS']
+
+    if(len(training_status.split(' '))==4):
+        training_percent = training_status.split(' ')[2]
+    else:
+        training_percent = 0
+
+    return render_template('model.html', USER=USER, Title = '학습 모델 관리', LABEL_TABLE=LABEL_TABLE, SENSITIVITY=DICT_SENSITIVITY, SPECIFICITY=DICT_SPECIFICITY, PRECISION=DICT_PRECISION, training_status=training_status, training_percent=training_percent, COMFIRM_NUMBER=COMFIRM_NUMBER, TOTAL_NUMBER=TOTAL_NUMBER)
 
 
 @app.route("/_JSON", methods=['GET', 'POST'])
@@ -481,10 +657,6 @@ def sending_data():
             print(json.loads(response.text)['STATUS'])
         return json.dumps(json.loads(response.text)['STATUS'])
 
-    if(request.json['ORDER'] == 'STATISTICS'):
-        LABEL_RANK = label_statistics()
-        PRECISION_DATA = prediction_statistics()
-        return json.dumps({'LABEL_RANK':LABEL_RANK, 'PRECISION_DATA':PRECISION_DATA})
 
 @app.route('/database/<path:path>')
 def database(path):
@@ -493,69 +665,6 @@ def database(path):
 @app.route('/thumb/<path:path>')
 def thumb_database(path):
     return send_from_directory(BASE_DIR, path)
-
-def label_statistics():
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-
-    LABEL_LIST = []
-
-    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-        if ('BBOX_LABEL' in image):
-            if((image['BBOX_LABEL']) == ''):
-                image['BBOX_LABEL'] = '[]'
-            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
-            for j in range(len(BBOX_LABEL)):
-                class_name = str(BBOX_LABEL[j]['label'])
-                LABEL_LIST.append(class_name)
-
-    LABEL_COUNTER = collections.Counter(LABEL_LIST)
-    LABEL_RANK = []
-
-    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[1], reverse = True):
-        LABEL_RANK.append((key, value))
-
-    return LABEL_RANK
-
-def prediction_statistics():
-
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
-
-    CONFIRM_COUNT = 0
-    PREDICT_COUNT = 0
-    NO_PREDICT_COUNT = 0
-    NOT_CHECKED = 0
-
-    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-        CONFIRM_COUNT+=1
-        if 'PREDICTION_CHECK' in image:
-            if (image['PREDICTION_CHECK'] == 'PREDICT'):
-                PREDICT_COUNT+=1
-            if (image['PREDICTION_CHECK'] == 'NO_PREDICT'):
-                NO_PREDICT_COUNT+=1
-            if (image['PREDICTION_CHECK'] == ''):
-                NOT_CHECKED+=1
-        
-
-    CURRENT_PRECISION = int((PREDICT_COUNT+NO_PREDICT_COUNT)/(PREDICT_COUNT+NO_PREDICT_COUNT+NOT_CHECKED+0.1)*100)
-    CURRENT_DATA_AMOUNT = CONFIRM_COUNT
-    CURRENT_DATE = 'NOW'
-
-    # 디렉토리 불러오기
-    with open('precision_record.json') as json_file:
-        data = json.load(json_file)
-        PRECISION_RECORD = data['PRECISION_RECORD']
-
-    PRECISION_DATA = []
-    for PRECISION in PRECISION_RECORD:
-        PRECISION_DATA.append((PRECISION[0],PRECISION[1], PRECISION[2]))
-    PRECISION_DATA.append((CURRENT_DATE, CURRENT_DATA_AMOUNT, str(CURRENT_PRECISION) + '%'))
-
-    return PRECISION_DATA
 
 def hanimread(filePath):
     stream = open( filePath.encode("utf-8") , "rb")
