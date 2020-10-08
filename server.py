@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.10'
+__VERSION__ = '0.1.11'
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -60,7 +60,10 @@ def main():
 
     total_hospital = hospitaldata.count_documents({})
     total_confirm = imagedata.count_documents({"CONFIRM_CHECK":"CONFIRM"})
-    STATISTICS = {'today_total':today_total, 'total_hospital':total_hospital, 'total_confirm':total_confirm }
+    STATISTICS = {'today_total':today_total, 'total_hospital':total_hospital, 'total_confirm':total_confirm}
+
+    if request.method == 'POST':
+        print(request.form)
 
     return render_template('main.html', STATISTICS = STATISTICS)
 
@@ -370,9 +373,9 @@ def status():
 
 @app.route("/model", methods=['GET', 'POST'])
 def model():
-    if not session.get('ID'):
+    if not session.get('NAME'):
         return redirect(url_for('login'))
-    USER = session['ID']
+    USER = session['NAME']
 
     # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
