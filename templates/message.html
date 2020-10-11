@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block side %}
+{{super()}}
+{% endblock %}
+
+{% block contents %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0 text-dark">{{Title}}</h1>
+        </div><!-- /.col -->
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item active">{{Title}}</li>
+          </ol>
+        </div><!-- /.col -->
+      </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
+  </div>
+  <!-- /.content-header -->
+
+  <!-- Main content -->
+  <section class="content">
+
+    <form name=frm action="../theme/adminlte2/skin/board/product/write_admin_in.skin.php" method=post>
+
+      <table id="example2" class="table table-bordered table-hover">
+        <thead>
+          <tr>
+            <th style="width:100px;text-align:center;">이름</th>
+            <th style="text-align:center;width:180px;">연락처</th>
+            <th style="text-align:center;width:120px;">병원명</th>
+            <th style="text-align:center;min-width:130px;">메시지</th>
+            <th style="text-align:center;width:180px;">기능</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for request_one in MYREQUEST %}
+          <tr>
+            <td style=text-align:center;>
+              {{request_one["NAME"]}} <i class="fas fa-copy">
+            </td>
+            <td class="hide_in_mobile" style=text-align:center;>{{request_one["CONTACT"]}}</td>
+            <td class="hide_in_mobile" style=text-align:center;>{{request_one["HOSPITAL"]}}</td>
+            <td style=text-align:center;>{{request_one["MESSAGE"]}}</td>
+            <td style=text-align:center;>
+              <a class="btn btn-primary btn-sm" href="#" data-toggle="modal" data-target="#modal-lg"
+                onclick="openModal('{{request_one["NAME"]}}');">
+                <i class="fas fa-folder"></i> View</a>
+              <a class="btn btn-danger btn-sm" href="/message?NAME={{request_one["NAME"]}}">
+                <i class="fas fa-trash"></i> Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!--<input type=submit value=SAVE>-->
+    </form>
+
+    <div class="modal fade" id="modal-lg">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">상세 정보</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="card-body">
+              <strong><i class="fas fa-id-card-alt"></i> 이름</strong>
+              <p class="text-muted" id="NAME">김동현</p>
+              <hr>
+              <strong><i class="fas fa-phone-volume"></i> 연락처</strong>
+              <p class="text-muted" id="CONTACT">010-7334-3551</p>
+              <hr>
+              <strong><i class="fas fa-hospital"></i> 병원명</strong>
+              <p class="text-muted" id="HOSPITAL">만남 병원</p>
+              <hr>
+              <strong><i class="far fa-file-alt mr-1"></i> 메시지</strong>
+              <p class="text-muted" id="MESSAGE">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam
+                fermentum enim neque.
+              </p>
+            </div>
+          </div>
+          <div class="modal-footer justify-content-between">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+        <!-- /.modal-content -->
+      </div>
+      <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% endblock %}
+
+{% block SCRIPT %}
+<script>
+  function openModal(NAME) {
+    generatePacket('MODAL', NAME, ' ');
+  }
+
+  function sendToServer(packet) {
+    console.log(packet);
+    $.ajax({
+      dataType: "JSON",
+      url: "/_JSON",
+      contentType: "application/json",
+      data: JSON.stringify(packet),
+      type: 'POST',
+      async: true,
+      success: function (result) {
+        RESULT = JSON.parse(result);
+        $('#NAME').text(RESULT['NAME']);
+        $('#CONTACT').text(RESULT['CONTACT']);
+        $('#HOSPITAL').text(RESULT['HOSPITAL']);
+        $('#MESSAGE').text(RESULT['MESSAGE']);
+      }
+    });
+  }
+
+  function generatePacket(ORDER, PARAMETER, SETVALUE) {
+    var parameter = {};
+    parameter['ORDER'] = ORDER;
+    parameter['PARAMETER'] = PARAMETER;
+    parameter['SETVALUE'] = SETVALUE;
+    parameter['ID'] = "MANAGER";
+    sendToServer(parameter);
+  }
+
+</script>
+{% endblock %}

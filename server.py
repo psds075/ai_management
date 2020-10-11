@@ -17,7 +17,7 @@ pool = ThreadPool(processes=2)
 app = Flask(__name__)
 app.secret_key = b'123'
 DEBUG_MODE = True
-__VERSION__ = '0.1.11'
+__VERSION__ = '0.1.12'
 
 with open('env.json') as json_file:
     data = json.load(json_file)
@@ -51,6 +51,7 @@ def main():
     DENTIQUB = myclient["DENTIQUB"]
     hospitaldata = DENTIQUB["hospitaldata"]
     imagedata = DENTIQUB["imagedata"]
+    REQUEST = DENTIQUB["REQUEST"]
 
     today = str(date.today())
     today_total = 0
@@ -61,11 +62,18 @@ def main():
     total_hospital = hospitaldata.count_documents({})
     total_confirm = imagedata.count_documents({"CONFIRM_CHECK":"CONFIRM"})
     STATISTICS = {'today_total':today_total, 'total_hospital':total_hospital, 'total_confirm':total_confirm}
-
+    
     if request.method == 'POST':
-        print(request.form)
-
-    return render_template('main.html', STATISTICS = STATISTICS)
+        NAME = request.form['NAME']
+        CONTACT = request.form['CONTACT']
+        MESSAGE = request.form['MESSAGE']
+        HOSPITAL = request.form['HOSPITAL']
+        REQUEST.insert_one({'NAME':NAME, 'CONTACT':CONTACT, 'MESSAGE':MESSAGE, 'HOSPITAL':HOSPITAL})
+        ALERT = True
+    else:
+        ALERT = False
+  
+    return render_template('main.html', STATISTICS = STATISTICS, ALERT = ALERT)
 
 
 # 일반 로그인 관련
@@ -241,7 +249,6 @@ def comment():
         
     return render_template('comment.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, ID = ID)
 
-
 @app.route("/service", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/service/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def service(DATASET_NAME):
@@ -337,38 +344,23 @@ def hospital():
     return render_template('hospital.html', USER=USER, Title = '병원 관리', hospitals = hospitals)
 
 
-@app.route("/status", methods=['GET', 'POST'])
-def status():
-    if not session.get('ID'):
+@app.route("/message", methods=['GET', 'POST'])
+def message():
+    if not session.get('NAME'):
         return redirect(url_for('login'))
-    USER = session['ID']
+    USER = session['NAME']
 
-    # Connection
     myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
     DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
+    REQUEST = DENTIQUB["REQUEST"]
+    
+    if('NAME' in request.args):
+        NAME = request.args['NAME']
+        REQUEST.delete_one({'NAME':NAME})
+    
+    MYREQUEST = REQUEST.find({})
 
-    # 레이블 데이터 불러오기
-    import collections
-    LABEL_LIST = []
-
-    for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-        if ('BBOX_LABEL' in image):
-            if((image['BBOX_LABEL']) == ''):
-                image['BBOX_LABEL'] = '[]'
-            BBOX_LABEL = json.loads(image['BBOX_LABEL'])
-            for j in range(len(BBOX_LABEL)):
-                class_name = str(BBOX_LABEL[j]['label'])
-                LABEL_LIST.append(class_name)
-
-    LABEL_COUNTER = collections.Counter(LABEL_LIST)
-    LABEL_TABLE = []
-
-    # 값으로 정렬
-    for key, value in sorted(LABEL_COUNTER.items(), key=lambda item: item[0], reverse = False):
-        LABEL_TABLE.append((key, value))
-
-    return render_template('status.html', USER=USER, Title = '데이터 수집 현황', LABEL_TABLE=LABEL_TABLE)
+    return render_template('message.html', USER=USER, Title = '설치 문의 관리', MYREQUEST = MYREQUEST)
 
 
 @app.route("/model", methods=['GET', 'POST'])
@@ -520,6 +512,7 @@ def sending_data():
     DENTIQUB = myclient["DENTIQUB"]
     imagedata = DENTIQUB["imagedata"]
     hospitaldata = DENTIQUB["hospitaldata"]
+    REQUEST = DENTIQUB["REQUEST"]
     dataset = DENTIQUB["dataset"]
 
     if(request.json['ORDER'] == 'REFLASH'):
@@ -535,6 +528,12 @@ def sending_data():
         elif((str(request.json['ID']) != 'MANAGER') & (target['NOTI'] != 'MANAGER')):
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": { "NOTI": 'NONE' }})
         return json.dumps(json.dumps(data))
+
+    if(request.json['ORDER'] == 'MODAL'):
+        print(request.json['PARAMETER'])
+        target = REQUEST.find_one({'NAME':request.json['PARAMETER']})
+        result = {'NAME':target['NAME'],'CONTACT':target['CONTACT'], 'HOSPITAL':target['HOSPITAL'], 'MESSAGE':target['MESSAGE']}
+        return json.dumps(json.dumps(result))
 
     if(request.json['ORDER'] == 'TARGET'):
         target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
