@@ -7,11 +7,11 @@ import json
 
 
 # Connection
-myclient = pymongo.MongoClient("mongodb://ai:1111@127.0.0.1:27017/")
+myclient = pymongo.MongoClient("mongodb://ai:1111@dentibot.kr:27017/")
 
 
 # Image Data Update
-DENTIQUB = myclient["DENTIQUB"]
+DENTIQUB = myclient["DENTIQUB_BACKUP"]
 imagedata = DENTIQUB["imagedata"]
 dataset = DENTIQUB["dataset"]
 
@@ -23,6 +23,11 @@ BASE_DIR = data['BASE_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
 
+for data in imagedata.find({})[0:10]:
+    print(data)
+
+# DATASET ARCHIVE 버그 수정
+'''
 for DIR in os.listdir(BASE_DIR):
     if(os.path.isdir(BASE_DIR+DIR)):
         for FILENAME in os.listdir(BASE_DIR+DIR):
@@ -46,10 +51,7 @@ for DIR in os.listdir(BASE_DIR):
                 dataset.update_one(myquery, newvalues)
         except:
             print('exception occured.')
-
-#dataset.update_many({},{ "$set": { "STATUS": "INSERTED" } })
-#imagedata.update_many({},{ "$set": { "CONFIRM_CHECK": "UNCONFIRM" } })
-
+'''
 
 
 

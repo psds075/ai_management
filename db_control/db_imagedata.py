@@ -17,6 +17,7 @@ imagedata = db["imagedata"]
 #if not imagedata.find(query):
 #    imagedata.insert_one(query)
 
+
 '''
 # IMAGE DB Read One
 query = {'HOSPITAL':'수원 예치과'}
@@ -88,9 +89,9 @@ for image in imagedata.find(query):
     print(image['FILENAME'], image['DATASET_NAME'])
 '''
 
-'''
-#전체 DB에서 가로 세로 비율이 1.9 이하인 이미지를 찾아서 CONFIRM 수정하기
 
+#전체 DB에서 가로 세로 비율이 1.9 이하인 이미지를 찾아서 CONFIRM 수정하기
+'''
 # -*- coding: utf-8 -*-
 import os
 import json
@@ -104,7 +105,7 @@ with open('env.json') as json_file:
 BASE_DIR = data['BASE_DIR']
 
 myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-DENTIQUB = myclient["DENTIQUB"]
+DENTIQUB = myclient["DENTIQUB_BACKUP"]
 hospitaldata = DENTIQUB["hospitaldata"]
 imagedata = DENTIQUB["imagedata"]
 dataset = db["dataset"]
@@ -135,6 +136,7 @@ print('change', count)
 
 
 # 정확도 통계 확인
+'''
 TODAY_STRING = datetime.datetime.now().strftime("%Y%m%d")
 
 DICT_TRUETOTAL = dict()
@@ -250,6 +252,64 @@ print()
 
 print('총 입력 데이터 수 :', imagedata.count_documents({}))
 print('CONFIRM 수 :', imagedata.count_documents({'CONFIRM_CHECK':"CONFIRM"}))
+'''
+
+
+
+#전체 DB에서 이미지 가로세로 범위 벗어난거 있는지 확인
+# -*- coding: utf-8 -*-
+
+import os
+import json
+import cv2
+import pymongo
+import numpy as np
+
+
+with open('env.json') as json_file:
+    data = json.load(json_file)
+
+BASE_DIR = data['BASE_DIR']
+
+myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+DENTIQUB = myclient["DENTIQUB"]
+hospitaldata = DENTIQUB["hospitaldata"]
+imagedata = DENTIQUB["imagedata"]
+dataset = db["dataset"]
+
+def imread_han(filePath):
+    stream = open( filePath.encode("utf-8") , "rb")
+    bytes = bytearray(stream.read())
+    numpyArray = np.asarray(bytes, dtype=np.uint8)
+    return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
+
+for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'})[:]:
+    filepath = BASE_DIR + image['DATASET_NAME'] + '/' + image['FILENAME']
+    if(os.path.isfile(filepath)):
+        img = imread_han(filepath)
+        height = img.shape[0]
+        width = img.shape[1]
+        if(image["BBOX_LABEL"] == ''):
+            image["BBOX_LABEL"] = '[]'
+        
+        labels = json.loads(image["BBOX_LABEL"])
+        for label in labels:
+            if(height < label['top']+label['height']):
+                print("Incorrect label exist on image ", image["FILENAME"], label)
+                label['height'] = height - label['top']
+                print("Revised", image["FILENAME"], label)
+            if(width < label['left']+label['width']):
+                print("Incorrect label exist on image ", image["FILENAME"], label)
+                label['width'] = height - label['left']
+                print("Revised", image["FILENAME"], label)
+
+        BBOX_LABEL = json.dumps(labels)
+        query = {'FILENAME': image['FILENAME']}
+        newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
+        imagedata.update_one(query, newvalues)
+        
+    else:
+        print('No image error.')
 
 
 
