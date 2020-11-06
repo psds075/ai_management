@@ -23,6 +23,7 @@ with open('env.json') as json_file:
     data = json.load(json_file)
 
 BASE_DIR = data['BASE_DIR']
+THUMB_DIR = data['THUMB_DIR']
 DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK','TIMESTAMP']
