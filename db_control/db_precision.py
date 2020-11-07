@@ -118,9 +118,10 @@ for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
                 PREDICTION_LABEL_SET.add(LABEL['label'])
                 
             for DISEASE in PREDICTION_LABEL_SET:
-                DICT_POSITIVETOTAL[DISEASE] += 1
-                if(DISEASE in GROUNDTRUTH_LABEL_SET):
-                    DICT_TRUEPOSITIVE[DISEASE] += 1
+                if(DISEASE in DICT_POSITIVETOTAL):
+                    DICT_POSITIVETOTAL[DISEASE] += 1
+                    if(DISEASE in GROUNDTRUTH_LABEL_SET):
+                        DICT_TRUEPOSITIVE[DISEASE] += 1
 
 
 for label in DICT_NEGATIVETOTAL:

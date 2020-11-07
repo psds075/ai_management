@@ -32,12 +32,12 @@ for image in imagedata.find(query):
     print(image)
 '''
 
+'''
 # DATASET DB UPDATE
-#newvalues = { "$set": { "STATUS": "INSERTED" } }
-#imagedata.update_one(query, newvalues)
-
-#data = imagedata.find_one(query)
-#print(data)
+query = {"DATASET_NAME": "20200921_OKC"}
+newvalues = { "$set": {"CONFIRM_CHECK":"UNCONFIRM"}}
+imagedata.update_many(query, newvalues)
+'''
 
 '''
 # Dialog 추가(PUSH)하기 
@@ -259,6 +259,7 @@ print('CONFIRM 수 :', imagedata.count_documents({'CONFIRM_CHECK':"CONFIRM"}))
 #전체 DB에서 이미지 가로세로 범위 벗어난거 있는지 확인
 # -*- coding: utf-8 -*-
 
+'''
 import os
 import json
 import cv2
@@ -308,6 +309,49 @@ for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'})[:]:
         newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
         imagedata.update_one(query, newvalues)
         
+    else:
+        print('No image error.')
+'''
+
+
+
+#전체 DB에서 이미지 Dimention 일치 여부 확인
+# -*- coding: utf-8 -*-
+
+
+import os
+import json
+import cv2
+import pymongo
+import numpy as np
+
+
+with open('env.json') as json_file:
+    data = json.load(json_file)
+
+BASE_DIR = data['BASE_DIR']
+
+myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+DENTIQUB = myclient["DENTIQUB"]
+hospitaldata = DENTIQUB["hospitaldata"]
+imagedata = DENTIQUB["imagedata"]
+dataset = db["dataset"]
+
+def imread_han(filePath):
+    stream = open( filePath.encode("utf-8") , "rb")
+    bytes = bytearray(stream.read())
+    numpyArray = np.asarray(bytes, dtype=np.uint8)
+    return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
+
+for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'})[:]:
+    filepath = BASE_DIR + image['DATASET_NAME'] + '/' + image['FILENAME']
+    if(os.path.isfile(filepath)):
+        img = imread_han(filepath)
+        height = img.shape[0]
+        width = img.shape[1]
+        if(len(img.shape) == 3):
+            print(image['FILENAME'])
+                
     else:
         print('No image error.')
 
