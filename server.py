@@ -12,7 +12,7 @@ import pymongo
 from shapely import geometry
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, date, timedelta
-pool = ThreadPool(processes=2)
+pool = ThreadPool(processes=4)
 
 app = Flask(__name__)
 app.secret_key = b'123'
@@ -686,14 +686,13 @@ def sending_data():
             if(DEBUG_MODE == True):
                 #print(type(boxes), boxes)
                 pass 
-
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes),'BBOX_VERSION':VERSION, 'BBOX_ARCHITECTURE':ARCHITECTURE,'TRAINING_DATE':TRAINING_DATE}})
 
         else:
+            boxes = json.loads(target_image['BBOX_PREDICTION'])
             OSTEOPOROSIS_PREDICTION = 0
             CONDYLE_LEFT = 0
             CONDYLE_RIGHT = 0
-            boxes = json.loads(target_image['BBOX_PREDICTION'])
             
         return json.dumps({'BOXES':boxes, 'OSTEOPOROSIS':OSTEOPOROSIS_PREDICTION, 'CONDYLE':[CONDYLE_LEFT, CONDYLE_RIGHT]})
 
