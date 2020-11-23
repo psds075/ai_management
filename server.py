@@ -690,6 +690,9 @@ def sending_data():
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes),'BBOX_VERSION':VERSION, 'BBOX_ARCHITECTURE':ARCHITECTURE,'TRAINING_DATE':TRAINING_DATE}})
 
         else:
+            OSTEOPOROSIS_PREDICTION = 0
+            CONDYLE_LEFT = 0
+            CONDYLE_RIGHT = 0
             boxes = json.loads(target_image['BBOX_PREDICTION'])
             
         return json.dumps({'BOXES':boxes, 'OSTEOPOROSIS':OSTEOPOROSIS_PREDICTION, 'CONDYLE':[CONDYLE_LEFT, CONDYLE_RIGHT]})
