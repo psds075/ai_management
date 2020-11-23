@@ -587,7 +587,7 @@ def sending_data():
                 EACH_LABEL['height'] = int(EACH_LABEL['height'] / request.json['RATIO'])
             for EACH_LABEL in BBOX_LABEL:
                 print(EACH_LABEL)
-            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL)}})
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:json.dumps(BBOX_LABEL), "CONFIRM_CHECK" : "UNCONFIRM"}})
 
         # Dialog 데이터의 경우 Push로 데이터를 입력함
         elif(request.json['PARAMETER'] == 'DIALOG'):
@@ -631,8 +631,10 @@ def sending_data():
             #병렬 코드
             boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
             boxes2 = pool.apply_async(request_prediction, (5102, mydata))
-            #osteoporosis = pool.apply_async(request_prediction, (5201, mydata))
+            #osteoporosis = pool.apply_async(request_prediction, (5103, mydata))
             boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
+            #osteoprosis = json.loads(osteoporosis.get()['BOXES'])
+            #print(osteoprosis[0], osteoprosis[1]) 
             boxes = bbox_duplicate_check(boxes)
             VERSION = boxes1.get()['VERSION']
             ARCHITECTURE = boxes1.get()['ARCHITECTURE']
@@ -648,6 +650,50 @@ def sending_data():
             boxes = json.loads(target_image['BBOX_PREDICTION'])
             
         return json.dumps(boxes)
+
+    if(request.json['ORDER'] == 'PREDICTION_V2'):
+
+        myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+        DENTIQUB = myclient["DENTIQUB"]
+        imagedata = DENTIQUB["imagedata"]
+        dataset = DENTIQUB["dataset"]
+
+        query = {'DATASET_NAME':request.json['DATASET'], 'FILENAME':request.json['FILENAME']}
+        target_image = imagedata.find_one(query)
+
+        if('BBOX_PREDICTION' not in target_image) or (request.json['PARAMETER'] == 'FORCE'):
+            imagepath = os.path.join(BASE_DIR+request.json['DATASET'],request.json['FILENAME'])
+            img = hanimread(imagepath) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
+            data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
+            mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
+
+            #병렬 코드
+            boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
+            boxes2 = pool.apply_async(request_prediction, (5102, mydata))
+            osteoporosis = pool.apply_async(request_prediction, (5103, mydata))
+            condyle = pool.apply_async(request_prediction, (5104, mydata))
+            boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
+            osteoprosis = json.loads(osteoporosis.get()['BOXES'])
+            condyle = json.loads(condyle.get()['BOXES'])
+            CONDYLE_RIGHT = int(condyle[0]*100)
+            CONDYLE_LEFT = int(condyle[1]*100)
+            OSTEOPOROSIS_PREDICTION = int((osteoprosis[0] + osteoprosis[1])*100)
+            boxes = bbox_duplicate_check(boxes)
+            VERSION = boxes1.get()['VERSION']
+            ARCHITECTURE = boxes1.get()['ARCHITECTURE']
+            TRAINING_DATE = boxes1.get()['TRAINING_DATE']
+
+            if(DEBUG_MODE == True):
+                #print(type(boxes), boxes)
+                pass 
+
+            imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'BBOX_PREDICTION':json.dumps(boxes),'BBOX_VERSION':VERSION, 'BBOX_ARCHITECTURE':ARCHITECTURE,'TRAINING_DATE':TRAINING_DATE}})
+
+        else:
+            boxes = json.loads(target_image['BBOX_PREDICTION'])
+            
+        return json.dumps({'BOXES':boxes, 'OSTEOPOROSIS':OSTEOPOROSIS_PREDICTION, 'CONDYLE':[CONDYLE_LEFT, CONDYLE_RIGHT]})
+
 
     if(request.json['ORDER'] == 'START_TRAINING'):
         response = requests.post('http://dentiqub.iptime.org:5001/start')

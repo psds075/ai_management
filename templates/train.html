@@ -217,17 +217,17 @@
               </div>
               <div id="right_box6">
                 <div class=text_left id="prdiction">Prediction</div>
-                <div class="text_left f_gray">TMJ RIGHT<b id=TMJ_LEFT_SCORE></b></div>
+                <div class="text_left f_gray">TMJ R DISEASE<b id=TMJ_LEFT_SCORE></b></div>
                 <div class="w3-grey">
-                  <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
+                  <div id="TMJR_BAR" class="w3-container w3-green w3-center" style="width:0%;height:4px;"></div>
                 </div>
-                <div class="text_left f_gray">TMJ LEFT<b id=TMJ_RIGHT_SCORE></b></div>
+                <div class="text_left f_gray">TMJ L DISEASE<b id=TMJ_RIGHT_SCORE></b></div>
                 <div class="w3-grey">
-                  <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
+                  <div id="TMJL_BAR" class="w3-container w3-green w3-center" style="width:0%;height:4px;"></div>
                 </div>
                 <div class="text_left f_gray">OSTEOPOROSIS<b id=OSTEOPOROSIS_SCORE></b></div>
                 <div class="w3-grey">
-                  <div id="GA_bar" class="w3-container w3-green w3-center" style="width:100%;height:4px;"></div>
+                  <div id="OSTEO_BAR" class="w3-container w3-green w3-center" style="width:0%;height:4px;"></div>
                 </div>
               </div>
               <br>
@@ -578,7 +578,7 @@
         }
         async function execute() {
           result = await execute1();
-          generatePacket('PREDICTION', 'FORCE', '');
+          generatePacket('PREDICTION_V2', 'FORCE', '');
         }
         execute();
       });
@@ -761,7 +761,7 @@
             if (packet['ORDER'] == 'TARGET') {
               result = JSON.parse(result);
               if (result['REVIEW_CHECK'] == 'UNREAD') {
-                generatePacket('PREDICTION', '', '');
+                generatePacket('PREDICTION_V2', '', '');
                 $('#PREDICTION_BUTTON').attr("class", "w3-button w3-red w3-hover-red w3-padding-small");
               } else {
                 if (result['PREDICTION_CHECK'] == 'PREDICT') {
@@ -822,6 +822,49 @@
               $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
             }
             if (packet['ORDER'] == 'PREDICTION') {
+              annotator_stop = true;
+              annotator.clear_all();
+              result.forEach(function (each_label) {
+                var rect = {
+                  left: parseInt(each_label.left * image_ratio),
+                  top: parseInt(each_label.top * image_ratio),
+                  width: parseInt(each_label.width * image_ratio),
+                  height: parseInt(each_label.height * image_ratio)
+                };
+                rect.label = each_label.label;
+                annotator.add_entry(rect);
+              });
+              annotator_stop = false;
+              showPage();
+
+              var parameter = {};
+              parameter['DATASET'] = DATASET;
+              parameter['ORDER'] = 'LABEL';
+              parameter['FILENAME'] = FILENAME;
+              parameter['PARAMETER'] = 'BBOX_LABEL';
+              parameter['SETVALUE'] = JSON.stringify(annotator.entries);
+              parameter['RATIO'] = image_ratio;
+              parameter['ID'] = '{{ID}}';
+
+              async function execute() {
+                result = await sendToServer(parameter);
+                generatePacket('LABEL', 'PREDICTION_CHECK', 'PREDICT');
+                commandLine(FILENAME + ' OPEN');
+              }
+              execute();
+
+            }
+            if (packet['ORDER'] == 'PREDICTION_V2') {
+              console.log('test');
+              osteoporosis_prediction = result['OSTEOPOROSIS'];
+              condyle_prediction = result['CONDYLE'];
+              $("#TMJR_BAR").css('width',condyle_prediction[1].toString()+'%');
+              $("#TMJ_RIGHT_SCORE").html(" : "+condyle_prediction[1].toString()+'%');
+              $("#TMJL_BAR").css('width',condyle_prediction[0].toString()+'%');
+              $("#TMJ_LEFT_SCORE").html(" : "+condyle_prediction[0].toString()+'%');
+              $("#OSTEO_BAR").css('width',osteoporosis_prediction.toString()+'%');
+              $("#OSTEOPOROSIS_SCORE").html(" : "+osteoporosis_prediction.toString()+'%');
+              result = result['BOXES'];
               annotator_stop = true;
               annotator.clear_all();
               result.forEach(function (each_label) {
