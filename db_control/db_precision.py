@@ -1,26 +1,9 @@
-import os
-import pandas as pd
 import json
 import pymongo
 import datetime
 
 TODAY_STRING = datetime.datetime.now().strftime("%Y%m%d")
 
-LABEL_DICT = set()
-
-'''
-with open('label_set_new.json') as json_file:
-    LABEL_NEW = json.load(json_file)
-    for SET in LABEL_NEW:
-        LABEL_DICT.add(SET[0])
-'''
-
-with open('label_set_old.json') as json_file:
-    LABEL_OLD = json.load(json_file)
-    for SET in LABEL_OLD:
-        LABEL_DICT.add(SET[0])
-
-#print(LABEL_DICT)
 
 # Connection
 myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")

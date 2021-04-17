@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
 import os
 import json
@@ -713,6 +713,7 @@ def sending_data():
 @app.route('/database/<path:path>')
 def database(path):
     return send_from_directory(BASE_DIR, path) 
+
 
 @app.route('/thumb/<path:path>')
 def thumb_database(path):
