@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=RobotoDraft" type="text/css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+<link rel="stylesheet" href="../static/chatMSG/style.css">
 
 <script src="../static/js/jquery-1.11.3.min.js"></script>
 <script src="../static/js/imageviewer.js"></script>
@@ -329,6 +331,61 @@
       </div>
     </div>
   </div>
+
+  <div class="fabs">
+    <div class="chat">
+      <div class="chat_header">
+        <div class="chat_option">
+          <div class="header_img">
+            <img src="http://res.cloudinary.com/dqvwa7vpe/image/upload/v1496415051/avatar_ma6vug.jpg" />
+          </div>
+          <span id="chat_head">Jane Doe</span> <br> <span class="agent">Agent</span> <span
+            class="online">(Online)</span>
+          <span id="chat_fullscreen_loader" class="chat_fullscreen_loader"><i
+              class="fullscreen zmdi zmdi-window-maximize"></i></span>
+        </div>
+      </div>
+      <div id="chat_converse" class="chat_conversion chat_converse">
+        <span id="checkpoint" class="chat_msg_item chat_msg_item_admin">
+          <div class="chat_avatar">
+            <img src="http://res.cloudinary.com/dqvwa7vpe/image/upload/v1496415051/avatar_ma6vug.jpg" />
+          </div>Hey there! Any question?
+        </span>
+        <span class="chat_msg_item chat_msg_item_user">
+          Hello!</span>
+        <span class="status">20m ago</span>
+        <span class="chat_msg_item chat_msg_item_admin">
+          <div class="chat_avatar">
+            <img src="http://res.cloudinary.com/dqvwa7vpe/image/upload/v1496415051/avatar_ma6vug.jpg" />
+          </div>Hey! Would you like to talk sales, support, or anyone?
+        </span>
+        <span class="chat_msg_item chat_msg_item_user">
+          Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+        <span class="status2">Just now. Not seen yet</span>
+        <span class="chat_msg_item chat_msg_item_user">
+          Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+        <span class="status2">Just now. Not seen yet</span>
+        <span class="chat_msg_item chat_msg_item_user">
+          Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+        <span class="status2">Just now. Not seen yet</span>
+        <span class="chat_msg_item chat_msg_item_user">
+          Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+        <span class="status2">Just now. Not seen yet</span>
+        <span class="chat_msg_item chat_msg_item_user">
+          Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+        <span class="status2">Just now. Not seen yet</span>
+      </div>
+      <div class="fab_field">
+        <a id="fab_camera" class="fab"><i class="zmdi zmdi-camera"></i></a>
+        <a id="fab_send" class="fab"><i class="zmdi zmdi-mail-send"></i></a>
+        <textarea id="chatSend" name="chat_message" placeholder="Send a message"
+          class="chat_field chat_message"></textarea>
+      </div>
+    </div>
+    <a id="prime" class="fab"><i class="prime zmdi zmdi-comment-outline"></i></a>
+  </div>
+
+  <script src="../static/chatMSG/script.js"></script>
 
   <script>
     var LABEL_DICT = {{ LABEL_DICT| tojson}};

@@ -28,6 +28,12 @@ DB_NAME = ''
 DB_DIR = BASE_DIR + DB_NAME + '/'
 TABLE_LIST = ['GUIDED_FILENAME','SEX','AGE','STATUS','TMJ_LEFT','TMJ_RIGHT','OSTEOPOROSIS','COMMENT_TEXT','REVIEW_CHECK','BBOX_LABEL', 'CONFIRM_CHECK','PREDICTION_CHECK','TIMESTAMP']
 
+# Connection
+myclient = pymongo.MongoClient("mongodb://ai:1111@dentibot.kr:27017/")
+DENTIQUB = myclient["DENTIQUB"]
+hospitaldata = DENTIQUB["hospitaldata"]
+imagedata = DENTIQUB["imagedata"]
+REQUEST = DENTIQUB["REQUEST"]
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -47,13 +53,6 @@ def index():
 # 일반 로그인 관련
 @app.route("/main", methods=['GET', 'POST'])
 def main():
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    hospitaldata = DENTIQUB["hospitaldata"]
-    imagedata = DENTIQUB["imagedata"]
-    REQUEST = DENTIQUB["REQUEST"]
-
     today = str(date.today())
     today_total = 0
     for hospital in hospitaldata.find({}):
@@ -80,11 +79,6 @@ def main():
 # 일반 로그인 관련
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    hospitaldata = DENTIQUB["hospitaldata"]
-
     if request.method == 'POST':
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
             session['NAME'] = 'MANAGER'
@@ -114,12 +108,6 @@ def train(DATASET_NAME):
 
     ID = session['NAME']
 
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
-    
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
@@ -190,12 +178,6 @@ def comment():
         return redirect(url_for('login'))
 
     ID = session['NAME']
-
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
     
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
@@ -259,12 +241,6 @@ def service(DATASET_NAME):
 
     hospital = session['NAME']
     
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    dataset = DENTIQUB["dataset"]
-    
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
@@ -321,9 +297,6 @@ def hospital():
         return redirect(url_for('login'))
     USER = session['NAME']
 
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    hospitaldata = DENTIQUB["hospitaldata"]
     hospitals = []
 
     today = date.today()
@@ -351,10 +324,6 @@ def message():
         return redirect(url_for('login'))
     USER = session['NAME']
 
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    REQUEST = DENTIQUB["REQUEST"]
-    
     if('NAME' in request.args):
         NAME = request.args['NAME']
         REQUEST.delete_one({'NAME':NAME})
@@ -369,11 +338,6 @@ def model():
     if not session.get('NAME'):
         return redirect(url_for('login'))
     USER = session['NAME']
-
-    # Connection
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
 
     # 레이블 데이터 불러오기
     import collections
@@ -510,13 +474,6 @@ def model():
 @app.route("/_JSON", methods=['GET', 'POST'])
 def sending_data():
 
-    myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-    DENTIQUB = myclient["DENTIQUB"]
-    imagedata = DENTIQUB["imagedata"]
-    hospitaldata = DENTIQUB["hospitaldata"]
-    REQUEST = DENTIQUB["REQUEST"]
-    dataset = DENTIQUB["dataset"]
-
     if(request.json['ORDER'] == 'REFLASH'):
         target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
         if('DIALOG' in target):
@@ -614,11 +571,6 @@ def sending_data():
 
     if(request.json['ORDER'] == 'PREDICTION'):
 
-        myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-        DENTIQUB = myclient["DENTIQUB"]
-        imagedata = DENTIQUB["imagedata"]
-        dataset = DENTIQUB["dataset"]
-
         query = {'DATASET_NAME':request.json['DATASET'], 'FILENAME':request.json['FILENAME']}
         target_image = imagedata.find_one(query)
 
@@ -652,11 +604,6 @@ def sending_data():
         return json.dumps(boxes)
 
     if(request.json['ORDER'] == 'PREDICTION_V2'):
-
-        myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-        DENTIQUB = myclient["DENTIQUB"]
-        imagedata = DENTIQUB["imagedata"]
-        dataset = DENTIQUB["dataset"]
 
         query = {'DATASET_NAME':request.json['DATASET'], 'FILENAME':request.json['FILENAME']}
         target_image = imagedata.find_one(query)
