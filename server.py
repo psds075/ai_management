@@ -9,6 +9,7 @@ import cv2
 import base64
 import numpy as np
 import pymongo
+import mongo_lib.image
 from shapely import geometry
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, date, timedelta
@@ -33,6 +34,7 @@ myclient = pymongo.MongoClient("mongodb://ai:1111@dentibot.kr:27017/")
 DENTIQUB = myclient["DENTIQUB"]
 hospitaldata = DENTIQUB["hospitaldata"]
 imagedata = DENTIQUB["imagedata"]
+dataset = DENTIQUB["dataset"]
 REQUEST = DENTIQUB["REQUEST"]
 
 @app.route("/", methods=['GET', 'POST'])
@@ -102,6 +104,7 @@ def logout():
 @app.route("/train", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
 @app.route("/train/<string:DATASET_NAME>", methods=['GET', 'POST'])
 def train(DATASET_NAME):
+    now_timestamp = int(datetime.now().timestamp())
 
     if not session['NAME'] == 'MANAGER':
         return redirect(url_for('login'))
@@ -112,7 +115,7 @@ def train(DATASET_NAME):
         data = json.load(json_file)
         LABEL_DICT = data['LABEL_DICT']
 
-    response = requests.post('http://dentiqub.iptime.org:5001/api')
+    response = requests.post('http://panvi.kr:5001/api')
     training_status = json.loads(response.text)['STATUS']
 
     if(len(training_status.split(' '))==4):
@@ -127,13 +130,34 @@ def train(DATASET_NAME):
 
     for data in dataset.find({'STATUS':'INSERTED'}).sort("NAME",pymongo.DESCENDING):
         datasetlist.append({'DATASET_NAME':data['NAME']})
-                
-    if DATASET_NAME == 'NONE':
-        datalist = []
-        archive_check = 'NONE'
 
+    datalist = []
+    archive_check = 'NONE'
+
+    if DATASET_NAME == 'NONE':
+        pass
+
+    elif DATASET_NAME == 'COMMENT':
+        for image in imagedata.find({'BOT_UNREAD' : {"$exists" : True}}):
+            if not 'REVIEW_CHECK' in image:
+                image['REVIEW_CHECK'] = 'UNREAD'
+            if not 'CONFIRM_CHECK' in image:
+                image['CONFIRM_CHECK'] = 'UNCONFIRM'
+            if not 'HOSPITAL' in image:
+                image['HOSPITAL'] = 'UNKNOWN'
+            if not 'NAME' in image:
+                image['NAME'] = 'UNKNOWN'
+            data = {
+                    'FILENAME' : image['FILENAME'],
+                    'REVIEW_CHECK': image['REVIEW_CHECK'],
+                    'CONFIRM_CHECK': image['CONFIRM_CHECK'],
+                    'HOSPITAL' : image['HOSPITAL'],
+                    'NAME' : image['NAME'],
+                    'BOT_UNREAD' : image['BOT_UNREAD']
+                    }
+            datalist.append(data)
+    
     else:
-        # 해당 날짜에 UNCONFIRM이 없으면 CONFIRM 시키기
         query = {'DATASET_NAME':DATASET_NAME, 'CONFIRM_CHECK':'UNCONFIRM'}
         if not imagedata.find_one(query):
             query = {'NAME':DATASET_NAME}
@@ -149,7 +173,7 @@ def train(DATASET_NAME):
             for filename in os.listdir(BASE_DIR+DATASET_NAME):
                 if not imagedata.find_one({'FILENAME':filename}):
                     imagedata.insert_one({'FILENAME':filename,'DATASET_NAME':DATASET_NAME, 'REVIEW_CHECK': 'UNREAD','CONFIRM_CHECK':'UNCONFIRM'})
-        datalist = []
+
         for image in imagedata.find({'DATASET_NAME' : DATASET_NAME}):
             if not 'REVIEW_CHECK' in image:
                 image['REVIEW_CHECK'] = 'UNREAD'
@@ -159,16 +183,19 @@ def train(DATASET_NAME):
                 image['HOSPITAL'] = 'UNKNOWN'
             if not 'NAME' in image:
                 image['NAME'] = 'UNKNOWN'
+            if not 'BOT_UNREAD' in image:
+                image['BOT_UNREAD'] = 0
             data = {
                     'FILENAME' : image['FILENAME'],
                     'REVIEW_CHECK': image['REVIEW_CHECK'],
                     'CONFIRM_CHECK': image['CONFIRM_CHECK'],
                     'HOSPITAL' : image['HOSPITAL'],
-                    'NAME' : image['NAME']
+                    'NAME' : image['NAME'],
+                    'BOT_UNREAD' : image['BOT_UNREAD']
                     }
             datalist.append(data)
-        
-    return render_template('train.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, ID = ID)
+
+    return render_template('train.html', datalist = datalist, datasetlist = datasetlist, archivelist=archivelist, current_dataset = DATASET_NAME, LABEL_DICT = json.dumps(LABEL_DICT, ensure_ascii=False), training_status = training_status, training_percent = training_percent, archive_check=archive_check, ID = ID, now_timestamp = now_timestamp)
 
 
 @app.route("/comment",methods=['GET', 'POST'])
@@ -460,7 +487,7 @@ def model():
 
     print(COMFIRM_NUMBER, TOTAL_NUMBER)
 
-    response = requests.post('http://dentiqub.iptime.org:5001/api')
+    response = requests.post('http://panvi.kr:5001/api')
     training_status = json.loads(response.text)['STATUS']
 
     if(len(training_status.split(' '))==4):
@@ -495,6 +522,7 @@ def sending_data():
         return json.dumps(json.dumps(result))
 
     if(request.json['ORDER'] == 'TARGET'):
+        print(request.json)
         target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
         if not 'TMJ_LEFT' in target:
             target['TMJ_LEFT'] = ''
@@ -520,11 +548,12 @@ def sending_data():
                 'REVIEW_CHECK':target['REVIEW_CHECK'],
                 'BBOX_LABEL':target['BBOX_LABEL'],
                 'CONFIRM_CHECK':target['CONFIRM_CHECK'],
-                'PREDICTION_CHECK':target['PREDICTION_CHECK']
-                } 
+                'PREDICTION_CHECK':target['PREDICTION_CHECK'],
+                'HOSPITAL':target['HOSPITAL']
+                }
         
         target['REVIEW_CHECK'] = 'READ'
-        if(request.json['ID'] != 'MANAGER'): #버그픽스
+        if(request.json['ID'] != 'MANAGER'):
             today = str(date.today())
             hospitaldata.update_one({'NAME':request.json['ID']}, { "$set": {"최근접속일": today} })
         imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": target })
@@ -558,8 +587,11 @@ def sending_data():
 
         elif(request.json['PARAMETER'] == 'CONFIRM_CHECK'):
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
+            
             # Confirm 관련 데이터셋의 경우 시간까지 기록함
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {'TIMESTAMP':str(pd.Timestamp('now'))}})
+            response = requests.post('http://panvi.kr:5107/api', json={"FILENAME":request.json['FILENAME']})
+
             # 전체 데이터셋이 Confirm인 경우 Dataset의 Status 바꿈
             if(not imagedata.find_one({'DATASET_NAME':request.json['DATASET'],'CONFIRM_CHECK':'UNCONFIRM'})):
                 dataset.update_one({'NAME':request.json['DATASET']},{ "$set": { "STATUS": "ARCHIVE" } })
@@ -729,12 +761,22 @@ def bbox_duplicate_check(boxes):
     return boxes
 
 def request_prediction(port, mydata):
-    response = requests.post('http://dentiqub.iptime.org:'+str(port)+'/api', json=mydata)
+    response = requests.post('http://dentibot.kr:'+str(port)+'/api', json=mydata)
     boxes = json.loads(response.text)['message']
     VERSION = json.loads(response.text)['VERSION']
     ARCHITECTURE = json.loads(response.text)['ARCHITECTURE']
     TRAINING_DATE = json.loads(response.text)['TRAINING_DATE']
     return {'BOXES':boxes, 'VERSION':VERSION, 'ARCHITECTURE':ARCHITECTURE, 'TRAINING_DATE':TRAINING_DATE}
+
+
+@app.route('/api/v1/<path:route>', methods=['GET', 'POST'])
+def load_chat(route):
+    url = "http://panvi.kr:5106/api/v1/"+route 
+    data = request.form
+    send = json.loads(requests.post(url, data).text)
+    print(send)
+    return jsonify(send)
+
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_MODE, host = '0.0.0.0', port = 80)

@@ -261,122 +261,122 @@ print('CONFIRM 수 :', imagedata.count_documents({'CONFIRM_CHECK':"CONFIRM"}))
 
 #'''
 
-import os
-import json
-import cv2
-import pymongo
-import numpy as np
-
-with open('env.json') as json_file:
-    data = json.load(json_file)
-
-BASE_DIR = data['BASE_DIR']
-myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
-DENTIQUB_20201106 = myclient["DENTIQUB_20201106"]
-imagedata_20201106 = DENTIQUB_20201106["imagedata"]
-DENTIQUB = myclient["DENTIQUB"]
-imagedata = DENTIQUB["imagedata"]
-
-def imread_han(filePath):
-    stream = open( filePath.encode("utf-8") , "rb")
-    bytes = bytearray(stream.read())
-    numpyArray = np.asarray(bytes, dtype=np.uint8)
-    return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
-
-for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
-    filepath = BASE_DIR + image['DATASET_NAME'] + '/' + image['FILENAME']
-    
-    
-    #print(filepath, "is here.")
-    #img = imread_han(filepath)
-    #height = img.shape[0]
-    #width = img.shape[1]
-    if(image["BBOX_LABEL"] == ''):
-        image["BBOX_LABEL"] = '[]'
-    
-    labels = json.loads(image["BBOX_LABEL"])
-       
-    
-    '''
-    # 가로세로 마이너스 체크
-    for label in labels:
-        if(label['width'] <= 0):
-            print('width error.')
-            
-        if(label['height'] <= 0):
-            print('height error.')
-    
-    # 가로세로 길이 체크
-    for label in labels:
-        if(height - 2 < label['top']+label['height'] ):
-            print("Incorrect label exist on image ", image["FILENAME"], label)
-            label['height'] = height - label['top'] - 2
-            print("Revised", image["FILENAME"], label)
-            
-            
-            BBOX_LABEL = json.dumps(labels)
-            query = {'FILENAME': image['FILENAME']}
-            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
-            imagedata.update_one(query, newvalues)
-            
-            
-        if(width - 2 < label['left']+label['width'] ):
-            print("Incorrect label exist on image ", image["FILENAME"], label)
-            label['width'] = width - label['left'] - 2
-            print("Revised", image["FILENAME"], label)
-
-            
-            BBOX_LABEL = json.dumps(labels)
-            query = {'FILENAME': image['FILENAME']}
-            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
-            imagedata.update_one(query, newvalues)
-            
-            
-    # Left, Top 이 0인 경우 수정
-    for label in labels:
-        if(label['top'] <= 0):
-            print("Incorrect label exist on image ", image["FILENAME"], label)
-            label['top'] = 1
-            print("Revised", image["FILENAME"], label)
-            
-            
-            BBOX_LABEL = json.dumps(labels)
-            query = {'FILENAME': image['FILENAME']}
-            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
-            imagedata.update_one(query, newvalues)
-            
-            
-        if(label['left'] <= 0):
-            print("Incorrect label exist on image ", image["FILENAME"], label)
-            label['left'] = 1
-            print("Revised", image["FILENAME"], label)
-
-            
-            BBOX_LABEL = json.dumps(labels)
-            query = {'FILENAME': image['FILENAME']}
-            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
-            imagedata.update_one(query, newvalues)
-    '''
-    
-    ERROR_CHECK = False
-    
-    # 가로세로 Small Object Check
-    for label in labels:
-        if(label['width'] <= 50):
-            print(label['width'], 'width error.')
-            ERROR_CHECK = True
-            
-        if(label['height'] <= 50):
-            print(label['height'], 'height error.')
-            ERROR_CHECK = True
-    
-    if(ERROR_CHECK):
-        print('Revised')
-        query = {'FILENAME': image['FILENAME']}
-        newvalues = { "$set": { "CONFIRM_CHECK": 'UNCONFIRM'}}
-        imagedata.update_one(query, newvalues)
-        
-    
+#import os
+#import json
+#import cv2
+#import pymongo
+#import numpy as np
+#
+#with open('env.json') as json_file:
+#    data = json.load(json_file)
+#
+#BASE_DIR = data['BASE_DIR']
+#myclient = pymongo.MongoClient("mongodb://ai:1111@dentiqub.iptime.org:27017/")
+#DENTIQUB_20201106 = myclient["DENTIQUB_20201106"]
+#imagedata_20201106 = DENTIQUB_20201106["imagedata"]
+#DENTIQUB = myclient["DENTIQUB"]
+#imagedata = DENTIQUB["imagedata"]
+#
+#def imread_han(filePath):
+#    stream = open( filePath.encode("utf-8") , "rb")
+#    bytes = bytearray(stream.read())
+#    numpyArray = np.asarray(bytes, dtype=np.uint8)
+#    return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
+#
+#for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'}):
+#    filepath = BASE_DIR + image['DATASET_NAME'] + '/' + image['FILENAME']
+#    
+#    
+#    #print(filepath, "is here.")
+#    #img = imread_han(filepath)
+#    #height = img.shape[0]
+#    #width = img.shape[1]
+#    if(image["BBOX_LABEL"] == ''):
+#        image["BBOX_LABEL"] = '[]'
+#    
+#    labels = json.loads(image["BBOX_LABEL"])
+#       
+#    
+#    '''
+#    # 가로세로 마이너스 체크
+#    for label in labels:
+#        if(label['width'] <= 0):
+#            print('width error.')
+#            
+#        if(label['height'] <= 0):
+#            print('height error.')
+#    
+#    # 가로세로 길이 체크
+#    for label in labels:
+#        if(height - 2 < label['top']+label['height'] ):
+#            print("Incorrect label exist on image ", image["FILENAME"], label)
+#            label['height'] = height - label['top'] - 2
+#            print("Revised", image["FILENAME"], label)
+#            
+#            
+#            BBOX_LABEL = json.dumps(labels)
+#            query = {'FILENAME': image['FILENAME']}
+#            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
+#            imagedata.update_one(query, newvalues)
+#            
+#            
+#        if(width - 2 < label['left']+label['width'] ):
+#            print("Incorrect label exist on image ", image["FILENAME"], label)
+#            label['width'] = width - label['left'] - 2
+#            print("Revised", image["FILENAME"], label)
+#
+#            
+#            BBOX_LABEL = json.dumps(labels)
+#            query = {'FILENAME': image['FILENAME']}
+#            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
+#            imagedata.update_one(query, newvalues)
+#            
+#            
+#    # Left, Top 이 0인 경우 수정
+#    for label in labels:
+#        if(label['top'] <= 0):
+#            print("Incorrect label exist on image ", image["FILENAME"], label)
+#            label['top'] = 1
+#            print("Revised", image["FILENAME"], label)
+#            
+#            
+#            BBOX_LABEL = json.dumps(labels)
+#            query = {'FILENAME': image['FILENAME']}
+#            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
+#            imagedata.update_one(query, newvalues)
+#            
+#            
+#        if(label['left'] <= 0):
+#            print("Incorrect label exist on image ", image["FILENAME"], label)
+#            label['left'] = 1
+#            print("Revised", image["FILENAME"], label)
+#
+#            
+#            BBOX_LABEL = json.dumps(labels)
+#            query = {'FILENAME': image['FILENAME']}
+#            newvalues = { "$set": { "BBOX_LABEL": BBOX_LABEL}}
+#            imagedata.update_one(query, newvalues)
+#    '''
+#    
+#    ERROR_CHECK = False
+#    
+#    # 가로세로 Small Object Check
+#    for label in labels:
+#        if(label['width'] <= 50):
+#            print(label['width'], 'width error.')
+#            ERROR_CHECK = True
+#            
+#        if(label['height'] <= 50):
+#            print(label['height'], 'height error.')
+#            ERROR_CHECK = True
+#    
+#    if(ERROR_CHECK):
+#        print('Revised')
+#        query = {'FILENAME': image['FILENAME']}
+#        newvalues = { "$set": { "CONFIRM_CHECK": 'UNCONFIRM'}}
+#        imagedata.update_one(query, newvalues)
+#        
+#    
 
 #'''
 
@@ -422,5 +422,32 @@ for image in imagedata.find({'CONFIRM_CHECK':'CONFIRM'})[:]:
     else:
         print('No image error.')
 '''
+
+def up_val(filename, variable):
+    filename = list(filename)
+    filename[-4] = '.'
+    filename = ''.join(filename)
+    query = {'FILENAME':filename}
+    target = imagedata.find_one(query)
+    if(variable in target):
+        newvalues = { "$set": {variable:target["USER_READ"]+1}}
+        imagedata.update_one(query, newvalues)
+    else:
+        newvalues = { "$set": {variable:1}}
+        imagedata.update_one(query, newvalues)
+
+def reset_val(filename, variable):
+    filename = list(filename)
+    filename[-4] = '.'
+    filename = ''.join(filename)
+    query = {'FILENAME':filename}
+    newvalues = { "$set": {variable:0}}
+    imagedata.update_one(query, newvalues)
+
+filename = '20210503141042_315_jpg'
+variable = "USER_READ"
+
+
+
 
 

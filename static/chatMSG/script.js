@@ -1,5 +1,3 @@
-//hideChat(0);
-
 $('#chat_converse').css('display', 'block');
 $('#chat_body').css('display', 'none');
 $('#chat_form').css('display', 'none');
@@ -8,53 +6,145 @@ $('.chat_fullscreen_loader').css('display', 'none');
 $('#chat_fullscreen').css('display', 'none');
 
 
-$.ajax({
-	beforeSend : function(xhr){
-		xhr.setRequestHeader("accept", "application/json");
-		xhr.setRequestHeader("x-access-key", "6041cb7706b927b5be29");
-		xhr.setRequestHeader("x-access-secret","867c49501b63e37e20d09e8194049aa9");
-	},
-	url: 'https://api.channel.io/open/v3/user-chats/604112d766ff6da9d9bb/messages?limit=10',
-	type: 'get',
-	success: (data, textStatus, jqXHR) => {
-			console.log('success');
-			console.log(data);
-			console.log(textStatus);
-			console.log(jqXHR);
-	}
-});
-
-
 document.getElementById('chat_converse').scrollIntoView();
 var topPosition = $("#checkpoint").offset().top;
 document.getElementById('chat_converse').scrollTop = topPosition - 536;
 
-$('#prime').click(function () {
+var LASTCHATTIME = 0;
+
+$('#prime').click(function (){
 	toggleFab();
 });
 
+
+function appendClient(message, date) {
+	var inner_tag = $("<div></div>").addClass("chat_avatar").html('<img src="../static/img/dental_hospital2.png"/>');
+	var outer_tag = $("<span></span>").addClass("chat_msg_item chat_msg_item_admin");
+	outer_tag.html(inner_tag);
+	outer_tag.append(message);
+	$("#chat_converse").append(outer_tag);
+	d = new Date(date);
+	var add_conv = $("<span></span>").addClass("status2").text(d.toLocaleString());
+	$("#chat_converse").append(add_conv);
+	document.getElementById('chat_converse').scrollIntoView();
+	var topPosition = outer_tag.offset().top;
+	document.getElementById('chat_converse').scrollTop = 20000;
+	LASTCHATTIME = date;
+}
+
+
+function appendBot(message, date) {
+	var add_conv = $("<span></span>").addClass("chat_msg_item chat_msg_item_user").text(message);
+	$("#chat_converse").append(add_conv);
+	d = new Date(date);
+	var add_conv = $("<span></span>").addClass("status2").text(d.toLocaleString());
+	$("#chat_converse").append(add_conv);
+	document.getElementById('chat_converse').scrollIntoView();
+	var topPosition = add_conv.offset().top;
+	document.getElementById('chat_converse').scrollTop = 20000;
+	LASTCHATTIME = date;
+}
+
+
 function appendChat(e) {
-	console.log(e.target);
 	var notEmpty = $(".usertext").val() != "",
 		isEnterKeypress = e.type == "keypress" && e.keyCode == 13,
 		isSendClick = e.type == "click";
 	if (notEmpty && (isEnterKeypress || isSendClick)) {
-		var add_conv = $("<span></span>").addClass("chat_msg_item chat_msg_item_user").text($("#chatSend").val());
-		$("#chat_converse").append(add_conv);
-		var add_conv = $("<span></span>").addClass("status2").text("Just now. Not seen yet");
-		$("#chat_converse").append(add_conv);
-		document.getElementById('chat_converse').scrollIntoView();
-		var topPosition = add_conv.offset().top;
-		document.getElementById('chat_converse').scrollTop = 20000;
-		$("#chatSend").val("");
-		e.preventDefault(); 
+		sendChat(filename);
+		e.preventDefault();
 	}
+}
+
+
+function sendChat(filename){
+	$.ajax({
+		data: {
+			'filename': filename,
+			'text': $("#chatSend").val()
+		},
+		dataType: 'JSON',
+		url: '/api/v1/chat/send',
+		type: 'POST',
+		success: (data, textStatus, jqXHR) => {
+			$("#chatSend").val("");
+		}
+	});
+}
+
+function receiveChat(filename){
+	return $.ajax({
+		data: {
+			'filename': "ALL",
+			'time': LASTCHATTIME,
+			'read': filename,
+			'read_type': "bot"
+		},
+		dataType: 'JSON',
+		url: '/api/v1/chat/reflesh',
+		type: 'POST',
+		success: (data, textStatus, jqXHR) => {
+			function myFunction(item, index, arr) {
+				if(item['filename'] == filename){
+					if(item['type'] == "bot"){
+						appendBot(item['text'], item['time']);
+					}
+					else if(item['type'] == "user"){
+						appendClient(item['text'], item['time']);
+					}
+					LASTCHATTIME = item['time'];
+					openFab();
+				}
+				else{
+					info_message(item["name"], item["text"], item['filename']);
+					addAlarm(item['filename']);
+					LASTCHATTIME = item['time'];
+				}
+			}
+			data.forEach(myFunction);
+		}
+	});
+}
+
+function initChat(filename_local, interval_local, open_chat){
+	filename = filename_local;
+	if(interval_local != ''){
+		clearInterval(interval_local);
+	}
+	$.ajax({
+		data: {
+			'filename': filename,
+			'read': filename,
+			'read_type': "bot"
+		},
+		dataType: 'JSON',
+		url: '/api/v1/chat/list',
+		type: 'POST',
+		success: (data, textStatus, jqXHR) => {
+			$("#chat_converse").html('');
+			function myFunction(item, index, arr) {
+				if(item['type'] == "bot"){
+					appendBot(item['text'], item['time']);
+				}
+				else if(item['type'] == "user"){
+					appendClient(item['text'], item['time']);
+				}
+				LASTCHATTIME = item['time'];
+			}
+			data.reverse().forEach(myFunction);
+			if(open_chat == true){
+				openFab();
+			}else{
+				closeFab();
+			}
+		}
+	});
+	return setInterval(receiveChat, 1000, filename);
 }
 
 $("#fab_send").click(appendChat);
 $("#chatSend").keypress(appendChat);
 
-//Toggle chat and links
 function toggleFab() {
 	$('.prime').toggleClass('zmdi-comment-outline');
 	$('.prime').toggleClass('zmdi-close');
@@ -65,21 +155,19 @@ function toggleFab() {
 	$('.fab').toggleClass('is-visible');
 }
 
-$('#chat_first_screen').click(function (e) {
-	hideChat(1);
-});
+function closeFab() {
+	if($('#prime').hasClass('is-float')){
+		toggleFab();
+	}
+}
 
-$('#chat_second_screen').click(function (e) {
-	hideChat(2);
-});
-
-$('#chat_third_screen').click(function (e) {
-	hideChat(3);
-});
-
-$('#chat_fourth_screen').click(function (e) {
-	hideChat(4);
-});
+function openFab() {
+	if($('#prime').hasClass('is-float')){
+		
+	}else{
+		toggleFab();
+	}
+}
 
 $('#chat_fullscreen_loader').click(function (e) {
 	$('.fullscreen').toggleClass('zmdi-window-maximize');
@@ -91,51 +179,6 @@ $('#chat_fullscreen_loader').click(function (e) {
 	$('.chat_header').toggleClass('chat_header2');
 	$('.fab_field').toggleClass('fab_field2');
 	$('.chat_converse').toggleClass('chat_converse2');
-	//$('#chat_converse').css('display', 'none');
-	// $('#chat_body').css('display', 'none');
-	// $('#chat_form').css('display', 'none');
-	// $('.chat_login').css('display', 'none');
-	// $('#chat_fullscreen').css('display', 'block');
 });
 
-function hideChat(hide) {
-	switch (hide) {
-		case 0:
-			$('#chat_converse').css('display', 'none');
-			$('#chat_body').css('display', 'none');
-			$('#chat_form').css('display', 'none');
-			$('.chat_login').css('display', 'block');
-			$('.chat_fullscreen_loader').css('display', 'none');
-			$('#chat_fullscreen').css('display', 'none');
-			break;
-		case 1:
-			$('#chat_converse').css('display', 'block');
-			$('#chat_body').css('display', 'none');
-			$('#chat_form').css('display', 'none');
-			$('.chat_login').css('display', 'none');
-			$('.chat_fullscreen_loader').css('display', 'block');
-			break;
-		case 2:
-			$('#chat_converse').css('display', 'none');
-			$('#chat_body').css('display', 'block');
-			$('#chat_form').css('display', 'none');
-			$('.chat_login').css('display', 'none');
-			$('.chat_fullscreen_loader').css('display', 'block');
-			break;
-		case 3:
-			$('#chat_converse').css('display', 'none');
-			$('#chat_body').css('display', 'none');
-			$('#chat_form').css('display', 'block');
-			$('.chat_login').css('display', 'none');
-			$('.chat_fullscreen_loader').css('display', 'block');
-			break;
-		case 4:
-			$('#chat_converse').css('display', 'none');
-			$('#chat_body').css('display', 'none');
-			$('#chat_form').css('display', 'none');
-			$('.chat_login').css('display', 'none');
-			$('.chat_fullscreen_loader').css('display', 'block');
-			$('#chat_fullscreen').css('display', 'block');
-			break;
-	}
-}
+

@@ -237,7 +237,7 @@ ul li{
 
 .chat_field {
   position: relative;
-  margin: 5px 0 5px 0;
+  margin: 8px 0 4px 0;
   width: 50%;
   font-family: 'Roboto';
   font-size: 12px;
@@ -363,8 +363,8 @@ ul li{
 .chat_converse {
   position: relative;
     background: #fff;
-    margin: 6px 0 0px 0;
-    height: 300px;
+    margin: 0px 0 0px 0;
+    height: 600px;
     min-height: 0;
     font-size: 12px;
     line-height: 18px;
@@ -438,6 +438,7 @@ ul li{
 
 .chat .chat_converse .chat_msg_item.chat_msg_item_admin {
   margin-left: 60px;
+  margin-right: 60px;
   float: left;
   background: rgba(0, 0, 0, 0.03);
   color: #666;

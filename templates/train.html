@@ -7,19 +7,23 @@
 <link rel="stylesheet" href="../static/css/style.css" type="text/css">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=RobotoDraft" type="text/css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
 <link rel="stylesheet" href="../static/chatMSG/style.css">
+<link href="../static/fontawesome/css/all.css" rel="stylesheet"> <!--load all styles -->
+<link href="../static/toastr/toastr.css" rel="stylesheet" type="text/css" />
+
 
 <script src="../static/js/jquery-1.11.3.min.js"></script>
 <script src="../static/js/imageviewer.js"></script>
 <script src="../static/js/bbox_annotator.js"></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.11.5/TweenMax.min.js'></script>
-<script src='https://kit.fontawesome.com/a076d05399.js'></script>
-
 
 <style>
   /* Style the search box */
+  .hide {
+    display: none;
+  }
+  
   #mySearch {
     width: 100%;
     font-size: 15px;
@@ -111,7 +115,7 @@
           {% endfor %}
         </div>
       </div>
-      <button onclick='window.location.href = "/comment";' class="w3-button w3-black" style='width:33%'>COMMENT</button>
+      <button onclick='window.location.href = "/train/COMMENT";' class="w3-button w3-black" style='width:33%'>COMMENT</button>
     </div>
 
     <div class="w3-bar w3-black">
@@ -123,26 +127,56 @@
     <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
 
     <div id="Demo1" class="w3-animate-left">
-      {% for data in datalist %}
-      <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
-        text="{{data['FILENAME']}}" style="padding:0px;">
-        <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
-          onclick="openImage('{{data['FILENAME']}}')" class="img_name" style="padding-right:0px;">
-          <div class="w3-container" style='padding:0px'>
-            <div class="w3-opacity" id="xray"><img src=/thumb/{{current_dataset}}/{{data['FILENAME']}}
-                style='height:65px;width:130px;'>
+      <div id="new_list">
+        {% if COMMENT %}
+        {% for data in datalist %}
+        <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST {{'hide' if data['BOT_UNREAD'] == 0}}" id="{{data['FILENAME'][:-4]}}_NEW"
+          text="{{data['FILENAME']}}" style="padding:0px;">
+          <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
+            onclick="openImage('{{data['FILENAME']}}')" class="img_name" style="padding-right:0px;">
+            <div class="w3-container" style='padding:0px'>
+              <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png"
+                  style='height:65px;width:65px;padding:0px;'>
+              </div>
+              <span class="w3-tag w3-round-xxlarge w3-red w3-border w3-border-white"
+              style="margin-bottom:15px;position:absolute;right:10px;">NEW</span>
+              <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+                <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
+                <br>
+                <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
+                <br>
+                <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
+              </div>
             </div>
-            <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
-              <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
-              <br>
-              <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
-              <br>
-              <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
-            </div>
-          </div>
-        </a>
+          </a>
+        </div>
+        {% endfor %}
+        {% endif %}
       </div>
-      {% endfor %}
+
+      <div id="read_list">
+        {% for data in datalist %}
+        <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST {{'hide' if data['BOT_UNREAD'] > 0}}" id="{{data['FILENAME'][:-4]}}"
+          text="{{data['FILENAME']}}" style="padding:0px;">
+          <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
+            onclick="openImage('{{data['FILENAME']}}')" class="img_name" style="padding-right:0px;">
+            <div class="w3-container" style='padding:0px'>
+              <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png"
+                  style='height:65px;width:65px;padding:0px;'>
+              </div>
+              <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+                <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
+                <br>
+                <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
+                <br>
+                <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+
     </div>
     <div class=center>
       <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START
@@ -337,7 +371,7 @@
       <div class="chat_header">
         <div class="chat_option">
           <div class="header_img">
-            <img src="http://res.cloudinary.com/dqvwa7vpe/image/upload/v1496415051/avatar_ma6vug.jpg" />
+            <img src="../static/img/dental_hospital2.png" />
           </div>
           <span id="chat_head">Jane Doe</span> <br> <span class="agent">Agent</span> <span
             class="online">(Online)</span>
@@ -379,13 +413,46 @@
         <a id="fab_camera" class="fab"><i class="zmdi zmdi-camera"></i></a>
         <a id="fab_send" class="fab"><i class="zmdi zmdi-mail-send"></i></a>
         <textarea id="chatSend" name="chat_message" placeholder="Send a message"
-          class="chat_field chat_message"></textarea>
+          class="chat_field chat_message" style="overflow:hidden;line-height:25px;"></textarea>
       </div>
     </div>
     <a id="prime" class="fab"><i class="prime zmdi zmdi-comment-outline"></i></a>
   </div>
 
   <script src="../static/chatMSG/script.js"></script>
+	<script src="../static/toastr/toastr.min.js"></script>
+
+  <script>
+		function info_message(hospital, message, filename){
+			toastr.options = {
+				closeButton: true,
+				progressBar: true,
+				showMethod: 'slideDown',
+				timeOut: 10000,
+				extendedTimeOut : 3000
+			};
+			toastr.options.onclick = function(){
+        filename = filename.replaceAt(filename.length-4, ".");
+        openImage(filename);
+      }
+			toastr.info(message, hospital);
+		}
+    function success_message(hospital, filename){
+			toastr.options = {
+				closeButton: true,
+				progressBar: true,
+				showMethod: 'slideDown',
+				timeOut: 10000,
+				extendedTimeOut : 3000
+			};
+			toastr.options.onclick = function(){
+        filename = filename.replaceAt(filename.length-4, ".");
+        openImage(filename);
+      }
+			toastr.success(filename.substr(0,4) +'.'+ filename.substr(4,2) +'.'+ filename.substr(6,2) +' '+ filename.substr(8,2) +':'+ filename.substr(10,2) +':'+ filename.substr(12,2),
+      hospital + " 파노라마");
+		}
+  </script>
 
   <script>
     var LABEL_DICT = {{ LABEL_DICT| tojson}};
@@ -403,7 +470,15 @@
 
     var FILENAME = '';
     var GUIDED_FILENAME = '';
+    var LASTIMAGETIME = {{now_timestamp}};
+    var INTERVAL = '';
+
+    String.prototype.replaceAt = function(index, replacement) {
+      return this.substr(0, index) + replacement + this.substr(index + replacement.length);
+    }  
+
     var DATASET = '{{current_dataset}}';
+    var COMMENT = {{'true' if current_dataset == "COMMENT" else 'false'}};
     var TAB_STATUS = 'UNCONFIRM';
     if ('{{archive_check}}' == 'ARCHIVE') {
       TAB_STATUS = 'ALL';
@@ -680,6 +755,7 @@
     function openImage(FILENAME_CURRENT) {
 
       FILENAME = FILENAME_CURRENT;
+      DATASET = FILENAME.substring(0,8);
       
       annotator_stop = true;
       $('#main_img').css("width", DEVICEWIDTH + 'px');
@@ -696,6 +772,7 @@
       TweenMax.set('#main_img', { '-webkit-filter': 'contrast(' + 100 + '%' + ')' });
 
       actual_image_width(FILENAME);
+      closeFab();
 
       function execute1() {
         return new Promise(function (resolve) {
@@ -709,10 +786,31 @@
         commandLine(FILENAME + ' OPEN');
       }
       execute();
+      openChat(FILENAME, INTERVAL);
+    }
+
+    function removeAlarm(FILENAME){
+      $('#' + FILENAME.substring(0, FILENAME.length - 4)).removeClass('hide');
+      $('#' + FILENAME.substring(0, FILENAME.length - 4)+'_NEW').addClass('hide');
+    }
+
+    function addAlarm(FILENAME){
+      $('#' + FILENAME.substring(0, FILENAME.length - 4)).addClass('hide');
+      $('#' + FILENAME.substring(0, FILENAME.length - 4)+'_NEW').removeClass('hide');
+    }
+
+    function openChat(FILENAME){
+      if($('#' + FILENAME.substring(0, FILENAME.length - 4)).hasClass('hide')){
+        removeAlarm(FILENAME);
+        INTERVAL = initReflesh(FILENAME.replace(".","_"), INTERVAL, true);
+      }
+      else{
+        INTERVAL = initReflesh(FILENAME.replace(".","_"), INTERVAL, false);
+      }
     }
 
     function sendCompleteLabeling() {
-      var parameter = { 'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
+      var parameter = {'ORDER': 'DB_INFO', 'PARAMETER': 'DB_STATUS', 'SETVALUE': 'COMPLETE', 'DATASET': DATASET };
       sendToServer(parameter);
       window.location.href = "/train";
     }
@@ -877,6 +975,7 @@
               }
               $('#TEXT_AREA').val(result['COMMENT_TEXT']);
               $('#COMMENT_TEXT').html(result['COMMENT_TEXT']);
+              $('#chat_head').html(result['HOSPITAL']);
             }
             if (packet['ORDER'] == 'PREDICTION') {
               annotator_stop = true;
@@ -1050,6 +1149,141 @@
       typeController("CMD_WINDOW" + i, 0, typing);
       i++;
     }
+
+    function receiveReflesh(filename){
+      return $.ajax({
+        data: {
+          'filename': "ALL",
+          'time': LASTCHATTIME,
+          'image_time': LASTIMAGETIME,
+          'read': filename,
+          'read_type': "bot"
+        },
+        dataType: 'JSON',
+        url: '/api/v1/reflesh',
+        type: 'POST',
+        success: (data, textStatus, jqXHR) => {
+          chat_data = data["chat_data"];
+          image_data = data["image_data"];
+          function myFunction(item, index, arr) {
+            if(item['filename'] == filename){
+              if(item['type'] == "bot"){
+                appendBot(item['text'], item['time']);
+              }
+              else if(item['type'] == "user"){
+                appendClient(item['text'], item['time']);
+              }
+              LASTCHATTIME = item['time'];
+              openFab();
+            }
+            else{
+              if(item['type'] == "user"){
+                info_message(item["name"], item["text"], item['filename']);
+              }
+              addAlarm(item['filename']);
+              LASTCHATTIME = item['time'];
+            }
+          }
+          chat_data.forEach(myFunction);
+          image_data.forEach(
+            (item, index, arr) => {
+              //success_message(item["HOSPITAL"], item['FILENAME']);
+              if(COMMENT == true){
+                if(item["type"] == "chat_image"){
+                  insertImageToList(item["FILENAME"], item["HOSPITAL"], item["patient_name"]);
+                }
+              }
+              else{
+                if(item["FILENAME"].substr(0,8) == DATASET){
+
+                }
+                if(item["type"] == "new_image"){
+                  insertImageToList(item["FILENAME"], item["HOSPITAL"], item["patient_name"]);
+                }
+              }
+              LASTIMAGETIME = item['time'];
+            }          
+          );
+        }
+      });
+    }
+
+    function insertImageToList(filename, hospital, patient_name){
+      filename_trim = filename.substring(0, filename.length - 4);
+      item_new_tag = `<div class="READ UNCONFIRM ARTICLE_LIST" id="${filename_trim}_NEW" text="${filename_trim}.jpg" style="padding: 0px;">
+        <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey" onclick="openImage('${filename_trim}.jpg')" style="padding-right:0px;">
+          <div class="w3-container" style="padding:0px">
+            <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png" style="height:65px;width:65px;padding:0px;">
+            </div>
+            <span class="w3-tag w3-round-xxlarge w3-red w3-border w3-border-white" style="margin-bottom:15px;position:absolute;right:10px;">NEW</span>
+            <div class="w3-opacity" id="xray_exp" style="font-size:12px;margin-top:5px;">
+              <i class="fas fa-copy w3-margin-right w3-text-blue"></i>${filename.substr(0,14)}
+              <br>
+              <i class="far fa-hospital w3-margin-right w3-text-blue"></i>${hospital}
+              <br>
+              <i class="fas fa-smile w3-margin-right w3-text-blue"></i>${patient_name}
+            </div>
+          </div>
+        </a>
+      </div>`;
+      item_tag = `<div class="READ UNCONFIRM ARTICLE_LIST hide" id="${filename_trim}" text="${filename_trim}.jpg" style="padding: 0px;">
+        <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey" onclick="openImage('${filename_trim}.jpg')" style="padding-right:0px;">
+          <div class="w3-container" style="padding:0px">
+            <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png" style="height:65px;width:65px;padding:0px;">
+            </div>
+            <div class="w3-opacity" id="xray_exp" style="font-size:12px;margin-top:5px;">
+              <i class="fas fa-copy w3-margin-right w3-text-blue"></i>${filename.substr(0,14)}
+              <br>
+              <i class="far fa-hospital w3-margin-right w3-text-blue"></i>${hospital}
+              <br>
+              <i class="fas fa-smile w3-margin-right w3-text-blue"></i>${patient_name}
+            </div>
+          </div>
+        </a>
+      </div>`;
+      $("#new_list").prepend(item_new_tag);
+      $("#read_list").prepend(item_tag);
+    }
+
+    function initReflesh(filename_local, interval_local, open_chat){
+      filename = filename_local;
+      if(interval_local != ''){
+        clearInterval(interval_local);
+      }
+      $.ajax({
+        data: {
+          'filename': filename,
+          'read': filename,
+          'read_type': "bot"
+        },
+        dataType: 'JSON',
+        url: '/api/v1/chat/list',
+        type: 'POST',
+        success: (data, textStatus, jqXHR) => {
+          console.log(data);
+          $("#chat_converse").html('');
+          function myFunction(item, index, arr) {
+            if(item['type'] == "bot"){
+              appendBot(item['text'], item['time']);
+            }
+            else if(item['type'] == "user"){
+              appendClient(item['text'], item['time']);
+            }
+            LASTCHATTIME = item['time'];
+          }
+          data.reverse().forEach(myFunction);
+          if(open_chat == true){
+            openFab();
+          }else{
+            closeFab();
+          }
+        }
+      });
+      return setInterval(receiveReflesh, 1000, filename);
+    }
+
+    INTERVAL = initReflesh('20210406100842_6882_jpg', '');
+
     commandLine(DATASET + ' OPEN');
     openTab(TAB_STATUS);
 
