@@ -40,11 +40,11 @@ REQUEST = DENTIQUB["REQUEST"]
 @app.route("/", methods=['GET', 'POST'])
 def index():
     if 'NAME' in session:
-        if(session['NAME'] == 'MANAGER'):
+        if(session['NAME_AI_TRAIN'] == 'MANAGER'):
             return redirect(url_for('train'))
-        elif(session['NAME'] == 'DEMO'):
+        elif(session['NAME_AI_TRAIN'] == 'DEMO'):
             return redirect(url_for('demo'))
-        elif(session['NAME'] == False):
+        elif(session['NAME_AI_TRAIN'] == False):
             return redirect(url_for('main'))
         else:
             return redirect(url_for('service'))
@@ -83,13 +83,13 @@ def main():
 def login():
     if request.method == 'POST':
         if(request.form['id']=='ai' and request.form['password'] == 'aiqub'):
-            session['NAME'] = 'MANAGER'
+            session['NAME_AI_TRAIN'] = 'MANAGER'
             return redirect(url_for('train'))
         elif(request.form['id']=='demo' and request.form['password'] == 'aiqub'):
-            session['NAME'] = 'DEMO'
+            session['NAME_AI_TRAIN'] = 'DEMO'
             return redirect(url_for('demo'))
         elif(hospitaldata.find_one({'ID':request.form['id'], 'PASSWORD':request.form['password']})):
-            session['NAME'] = hospitaldata.find_one({'ID':request.form['id']})['NAME']
+            session['NAME_AI_TRAIN'] = hospitaldata.find_one({'ID':request.form['id']})['NAME']
             return redirect(url_for('service'))
 
     session.permanent = True
@@ -98,7 +98,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session['NAME'] = False
+    session['NAME_AI_TRAIN'] = False
     return redirect(url_for('login'))
 
 @app.route("/train", defaults={'DATASET_NAME' : 'NONE'},methods=['GET', 'POST'])
@@ -106,10 +106,10 @@ def logout():
 def train(DATASET_NAME):
     now_timestamp = int(datetime.now().timestamp())
 
-    if not session['NAME'] == 'MANAGER':
+    if not session['NAME_AI_TRAIN'] == 'MANAGER':
         return redirect(url_for('login'))
 
-    ID = session['NAME']
+    ID = session['NAME_AI_TRAIN']
 
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
@@ -201,10 +201,10 @@ def train(DATASET_NAME):
 @app.route("/comment",methods=['GET', 'POST'])
 def comment():
     
-    if not session['NAME'] == 'MANAGER':
+    if not session['NAME_AI_TRAIN'] == 'MANAGER':
         return redirect(url_for('login'))
 
-    ID = session['NAME']
+    ID = session['NAME_AI_TRAIN']
     
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
@@ -266,7 +266,7 @@ def service(DATASET_NAME):
     if not session.get('NAME'):
         return redirect(url_for('login'))
 
-    hospital = session['NAME']
+    hospital = session['NAME_AI_TRAIN']
     
     with open('label_dict.json',encoding = 'utf-8') as json_file:
         data = json.load(json_file)
@@ -322,7 +322,7 @@ def service(DATASET_NAME):
 def hospital():
     if not session.get('NAME'):
         return redirect(url_for('login'))
-    USER = session['NAME']
+    USER = session['NAME_AI_TRAIN']
 
     hospitals = []
 
@@ -349,7 +349,7 @@ def hospital():
 def message():
     if not session.get('NAME'):
         return redirect(url_for('login'))
-    USER = session['NAME']
+    USER = session['NAME_AI_TRAIN']
 
     if('NAME' in request.args):
         NAME = request.args['NAME']
@@ -364,7 +364,7 @@ def message():
 def model():
     if not session.get('NAME'):
         return redirect(url_for('login'))
-    USER = session['NAME']
+    USER = session['NAME_AI_TRAIN']
 
     # 레이블 데이터 불러오기
     import collections
