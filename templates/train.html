@@ -126,8 +126,8 @@
     <input type="text" id="mySearch" onkeyup="searchFilter()" placeholder="Search.." title="Type in a category">
 
     <div id="Demo1" class="w3-animate-left">
+      {% if current_dataset == "COMMENT" %}
       <div id="new_list">
-        {% if COMMENT %}
         {% for data in datalist %}
         <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST {{'hide' if data['BOT_UNREAD'] == 0}}" id="{{data['FILENAME'][:-4]}}_NEW"
           text="{{data['FILENAME']}}" style="padding:0px;">
@@ -150,7 +150,6 @@
           </a>
         </div>
         {% endfor %}
-        {% endif %}
       </div>
 
       <div id="read_list">
@@ -175,7 +174,32 @@
         </div>
         {% endfor %}
       </div>
+      {% endif %}
 
+      {% if current_dataset != "COMMENT" %}
+      <div id="read_list">
+        {% for data in datalist %}
+        <div class="{{data['REVIEW_CHECK']}} {{data['CONFIRM_CHECK']}} ARTICLE_LIST" id="{{data['FILENAME'][:-4]}}"
+          text="{{data['FILENAME']}}" style="padding:0px;">
+          <a href="javascript:void(0)" class="w3-bar-item w3-button test w3-hover-dark-grey"
+            onclick="openImage('{{data['FILENAME']}}')" class="img_name" style="padding-right:0px;">
+            <div class="w3-container" style='padding:0px'>
+              <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png"
+                  style='height:65px;width:65px;padding:0px;'>
+              </div>
+              <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+                <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
+                <br>
+                <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
+                <br>
+                <i class='fas fa-smile w3-margin-right w3-text-blue'></i>{{data['NAME']}}
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     <div class=center>
       <button id=TRAINING_BUTTON class=below_btn onclick="TRAINING_BUTTON_CONTROL();" style='display:;'>START
@@ -911,6 +935,19 @@
           type: 'POST',
           async: true,
           success: function (result) {
+            /*
+            result 파라미터
+            - FILENAME
+            - TMJ_RIGHT
+            - TMJ_LEFT
+            - OSTEOPOROSIS
+            - COMMENT_TEXT
+            - REVIEW_CHECK : READ/UNREAD
+            - BBOX_LABEL
+            - CONFIRM_CHECK
+            - PREDICTION_CHECK
+            - HOSPITAL
+            */
             console.log(result);
             if (packet['ORDER'] == 'TARGET') {
               result = JSON.parse(result);
@@ -1007,7 +1044,6 @@
                 commandLine(FILENAME + ' OPEN');
               }
               execute();
-
             }
             if (packet['ORDER'] == 'PREDICTION_V2') {
               console.log('test');

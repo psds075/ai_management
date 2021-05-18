@@ -133,12 +133,13 @@ def train(DATASET_NAME):
 
     datalist = []
     archive_check = 'NONE'
+    current_dataset = DATASET_NAME
 
     if DATASET_NAME == 'NONE':
         pass
 
     elif DATASET_NAME == 'COMMENT':
-        for image in imagedata.find({'BOT_UNREAD' : {"$exists" : True}}):
+        for image in imagedata.find({'BOT_UNREAD' : {"$exists" : True}}).sort("FILENAME",pymongo.DESCENDING):
             if not 'REVIEW_CHECK' in image:
                 image['REVIEW_CHECK'] = 'UNREAD'
             if not 'CONFIRM_CHECK' in image:
@@ -596,6 +597,11 @@ def sending_data():
             if(not imagedata.find_one({'DATASET_NAME':request.json['DATASET'],'CONFIRM_CHECK':'UNCONFIRM'})):
                 dataset.update_one({'NAME':request.json['DATASET']},{ "$set": { "STATUS": "ARCHIVE" } })
 
+            # Confirm 한 경우 웹훅으로 알림이 가도록 하기
+            #image = imagedata.find_one({'FILENAME':request.json['FILENAME']})
+            #image_alarm = {'FILENAME':fname+'.jpg', 'HOSPITAL':HOSPITAL, 'patient_name': NAME, 'CHARTID':image['CHARTID'], 'CATEGORY':CATEGORY, 'STUDYDATE':STUDYDATE, 'STUDYTIME':STUDYTIME, 'type':'new_image'}
+            #response = requests.post('http://panvi.kr:5106/webhook/image', json=image_alarm)
+
         else:
             imagedata.update_one({'FILENAME':request.json['FILENAME']}, { "$set": {request.json['PARAMETER']:str(request.json['SETVALUE'])}})
 
@@ -645,12 +651,30 @@ def sending_data():
             img = hanimread(imagepath) #img = cv2.imread(target_image) 대체함. 한글경로 버그 수정
             data = base64.b64encode(cv2.imencode('.jpg', img)[1]).decode()
             mydata = {'img_name' : request.json['FILENAME'], 'data' : data}
+            response = requests.post('http://panvi.kr:5101/api', json=mydata)
+            '''
+            response
+            - ARCHITECTURE
+            - BOXES
+            - segmentations
+            - SEG_INFO
+            '''
+            print(json.loads(response.text))
+            boxes = json.loads(response.text)['BOXES']
+            VERSION = json.loads(response.text)['VERSION']
+            ARCHITECTURE = json.loads(response.text)['ARCHITECTURE']
+            TRAINING_DATE = json.loads(response.text)['TRAINING_DATE']
+            CONDYLE_RIGHT = 0
+            CONDYLE_LEFT = 0
+            OSTEOPOROSIS_PREDICTION = 0
 
+            '''
             #병렬 코드
             boxes1 = pool.apply_async(request_prediction, (5101, mydata)) 
             boxes2 = pool.apply_async(request_prediction, (5102, mydata))
             osteoporosis = pool.apply_async(request_prediction, (5103, mydata))
             condyle = pool.apply_async(request_prediction, (5104, mydata))
+
             boxes = boxes1.get()['BOXES'] + boxes2.get()['BOXES']
             osteoprosis = json.loads(osteoporosis.get()['BOXES'])
             condyle = json.loads(condyle.get()['BOXES'])
@@ -661,6 +685,7 @@ def sending_data():
             VERSION = boxes1.get()['VERSION']
             ARCHITECTURE = boxes1.get()['ARCHITECTURE']
             TRAINING_DATE = boxes1.get()['TRAINING_DATE']
+            '''
 
             if(DEBUG_MODE == True):
                 #print(type(boxes), boxes)
@@ -761,7 +786,7 @@ def bbox_duplicate_check(boxes):
     return boxes
 
 def request_prediction(port, mydata):
-    response = requests.post('http://dentibot.kr:'+str(port)+'/api', json=mydata)
+    response = requests.post('http://panvi.kr:'+str(port)+'/api', json=mydata)
     boxes = json.loads(response.text)['message']
     VERSION = json.loads(response.text)['VERSION']
     ARCHITECTURE = json.loads(response.text)['ARCHITECTURE']
