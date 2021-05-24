@@ -392,7 +392,7 @@ ul li{
   position: relative;
   margin: 8px 0 15px 100px;
   padding: 8px 10px;
-  max-width: 60%;
+  max-width: 70%;
   display: block;
   word-wrap: break-word;
   border-radius: 3px;
@@ -400,6 +400,7 @@ ul li{
   animation: zoomIn .5s cubic-bezier(.42, 0, .58, 1);
   clear: both;
   z-index: 999;
+  font-size:14px;
 }
 .status {
     margin: 45px -50px 0 0;
@@ -408,7 +409,7 @@ ul li{
     opacity: 0.3;
 }
 .status2 {
-    margin: -10px 20px 0 0;
+    margin: -10px 20px 0 200px;
     float: right;
     display: block;
     font-size: 11px;
@@ -682,7 +683,7 @@ strong.chat_time {
 
 @media only screen and (min-width: 1024px) {
   .chat {
-    width: 300px;
+    width: 400px;
   }
   .chat_field {
     width: 65%;

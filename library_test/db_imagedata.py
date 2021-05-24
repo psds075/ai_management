@@ -450,7 +450,6 @@ filename = '20210503141042_315_jpg'
 variable = "USER_READ"
 '''
 
-
 '''
 # IMAGE DB Read One
 query = {'FILENAME':'20210518101955'}
@@ -458,14 +457,19 @@ image = imagedata.find_one(query)
 print(json.loads(image['BBOX_LABEL']))
 '''
 
-images = imagedata.find({'BOT_UNREAD' : {"$exists" : True}}).sort("NAME",pymongo.DESCENDING)
+'''
+images = imagedata.find({'BOT_UNREAD' : {"$exists" : True}}).sort("FILENAME",pymongo.DESCENDING)
 for image in images:
-    print(image)
+    print(image['FILENAME'])
 
+image_count = imagedata.count_documents({'BOT_UNREAD' : {"$exists" : True}})
+print(image_count)
+'''
 
-
-
-
-
-
+'''
+# Unset Field
+query = {'HOSPITAL': '사과꽃치과'}
+newvalues = { "$unset": {"USER_UNREAD":1, "BOT_UNREAD":1} }
+imagedata.update_many(query, newvalues)
+'''
 

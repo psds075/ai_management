@@ -408,7 +408,8 @@
             <img src="http://res.cloudinary.com/dqvwa7vpe/image/upload/v1496415051/avatar_ma6vug.jpg" />
           </div>Hey there! Any question?
         </span>
-        <span class="chat_msg_item chat_msg_item_user">
+
+        <!-- <span class="chat_msg_item chat_msg_item_user">
           Hello!</span>
         <span class="status">20m ago</span>
         <span class="chat_msg_item chat_msg_item_admin">
@@ -430,7 +431,8 @@
         <span class="status2">Just now. Not seen yet</span>
         <span class="chat_msg_item chat_msg_item_user">
           Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
-        <span class="status2">Just now. Not seen yet</span>
+        <span class="status2">Just now. Not seen yet</span> -->
+
       </div>
       <div class="fab_field">
         <a id="fab_camera" class="fab"><i class="zmdi zmdi-camera"></i></a>
@@ -493,6 +495,7 @@
 
     var FILENAME = '';
     var GUIDED_FILENAME = '';
+    var LASTCHATTIME = {{now_timestamp}};
     var LASTIMAGETIME = {{now_timestamp}};
     var INTERVAL = '';
 
@@ -925,7 +928,6 @@
     }
 
     function sendToServer(packet) {
-      console.log(packet);
       return new Promise(function (resolve, reject) {
         $.ajax({
           dataType: "JSON",
@@ -948,7 +950,6 @@
             - PREDICTION_CHECK
             - HOSPITAL
             */
-            console.log(result);
             if (packet['ORDER'] == 'TARGET') {
               result = JSON.parse(result);
               if (result['REVIEW_CHECK'] == 'UNREAD') {
@@ -1046,7 +1047,6 @@
               execute();
             }
             if (packet['ORDER'] == 'PREDICTION_V2') {
-              console.log('test');
               osteoporosis_prediction = result['OSTEOPOROSIS'];
               condyle_prediction = result['CONDYLE'];
               $("#TMJR_BAR").css('width',condyle_prediction[1].toString()+'%');
@@ -1097,7 +1097,6 @@
             if (packet['ORDER'] == 'STATISTICS') {
               $('#loading_statistics').hide(200);
               $('#statistics_contents').show(200);
-              console.log(result);
               LABEL_RANK = result['LABEL_RANK']
               $("#statistics_table").html('<thead><tr class="w3-black"><th class="w3-center">LABEL 항목</th><th class="w3-center">LABEL 수</th></tr></thead>');
               for (var i = 0; i < LABEL_RANK.length; i++) {
@@ -1192,7 +1191,8 @@
           'time': LASTCHATTIME,
           'image_time': LASTIMAGETIME,
           'read': filename,
-          'read_type': "bot"
+          'read_type': "bot",
+          'hospital': "none"
         },
         dataType: 'JSON',
         url: '/api/v1/reflesh',
@@ -1200,9 +1200,12 @@
         success: (data, textStatus, jqXHR) => {
           chat_data = data["chat_data"];
           image_data = data["image_data"];
+          if(chat_data.length != 0){
+            console.log(data);
+          }
           function myFunction(item, index, arr) {
             if(item['filename'] == filename){
-              if(item['type'] == "bot"){
+              if(item['type'] == "bot" || item['type'] == "manager"){
                 appendBot(item['text'], item['time']);
               }
               else if(item['type'] == "user"){
@@ -1218,6 +1221,11 @@
               addAlarm(item['filename']);
               LASTCHATTIME = item['time'];
             }
+            /*
+            if(COMMENT == true){
+              insertImageToList(item["filename"], item["name"], item["patient"]);
+            }
+            */
           }
           chat_data.forEach(myFunction);
           image_data.forEach(
@@ -1285,39 +1293,42 @@
       if(interval_local != ''){
         clearInterval(interval_local);
       }
-      $.ajax({
-        data: {
-          'filename': filename,
-          'read': filename,
-          'read_type': "bot"
-        },
-        dataType: 'JSON',
-        url: '/api/v1/chat/list',
-        type: 'POST',
-        success: (data, textStatus, jqXHR) => {
-          console.log(data);
-          $("#chat_converse").html('');
-          function myFunction(item, index, arr) {
-            if(item['type'] == "bot"){
-              appendBot(item['text'], item['time']);
+      if(filename_local != 'INIT'){
+        $.ajax({
+          data: {
+            'filename': filename,
+            'read': filename,
+            'read_type': "bot"
+          },
+          dataType: 'JSON',
+          url: '/api/v1/chat/list',
+          type: 'POST',
+          success: (data, textStatus, jqXHR) => {
+            $("#chat_converse").html('');
+            function myFunction(item, index, arr) {
+              if(item['type'] == "bot" || item['type'] == "manager"){
+                appendBot(item['text'], item['time']);
+              }
+              else if(item['type'] == "user"){
+                appendClient(item['text'], item['time']);
+              }
+              if(parseInt(item['time']) > LASTCHATTIME){
+                LASTCHATTIME = parseInt(item['time']);
+              }
             }
-            else if(item['type'] == "user"){
-              appendClient(item['text'], item['time']);
+            data.reverse().forEach(myFunction);
+            if(open_chat == true){
+              openFab();
+            }else{
+              closeFab();
             }
-            LASTCHATTIME = item['time'];
           }
-          data.reverse().forEach(myFunction);
-          if(open_chat == true){
-            openFab();
-          }else{
-            closeFab();
-          }
-        }
-      });
+        });
+      }
       return setInterval(receiveReflesh, 1000, filename);
     }
 
-    //INTERVAL = initReflesh('20210406100842_6882_jpg', '');
+    INTERVAL = initReflesh('INIT', '');
 
     commandLine(DATASET + ' OPEN');
     openTab(TAB_STATUS);

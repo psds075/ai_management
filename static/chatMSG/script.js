@@ -29,7 +29,6 @@ function appendClient(message, date) {
 	document.getElementById('chat_converse').scrollIntoView();
 	var topPosition = outer_tag.offset().top;
 	document.getElementById('chat_converse').scrollTop = 20000;
-	LASTCHATTIME = date;
 }
 
 
@@ -42,7 +41,6 @@ function appendBot(message, date) {
 	document.getElementById('chat_converse').scrollIntoView();
 	var topPosition = add_conv.offset().top;
 	document.getElementById('chat_converse').scrollTop = 20000;
-	LASTCHATTIME = date;
 }
 
 
@@ -70,76 +68,6 @@ function sendChat(filename){
 			$("#chatSend").val("");
 		}
 	});
-}
-
-function receiveChat(filename){
-	return $.ajax({
-		data: {
-			'filename': "ALL",
-			'time': LASTCHATTIME,
-			'read': filename,
-			'read_type': "bot"
-		},
-		dataType: 'JSON',
-		url: '/api/v1/chat/reflesh',
-		type: 'POST',
-		success: (data, textStatus, jqXHR) => {
-			function myFunction(item, index, arr) {
-				if(item['filename'] == filename){
-					if(item['type'] == "bot"){
-						appendBot(item['text'], item['time']);
-					}
-					else if(item['type'] == "user"){
-						appendClient(item['text'], item['time']);
-					}
-					LASTCHATTIME = item['time'];
-					openFab();
-				}
-				else{
-					info_message(item["name"], item["text"], item['filename']);
-					addAlarm(item['filename']);
-					LASTCHATTIME = item['time'];
-				}
-			}
-			data.forEach(myFunction);
-		}
-	});
-}
-
-function initChat(filename_local, interval_local, open_chat){
-	filename = filename_local;
-	if(interval_local != ''){
-		clearInterval(interval_local);
-	}
-	$.ajax({
-		data: {
-			'filename': filename,
-			'read': filename,
-			'read_type': "bot"
-		},
-		dataType: 'JSON',
-		url: '/api/v1/chat/list',
-		type: 'POST',
-		success: (data, textStatus, jqXHR) => {
-			$("#chat_converse").html('');
-			function myFunction(item, index, arr) {
-				if(item['type'] == "bot"){
-					appendBot(item['text'], item['time']);
-				}
-				else if(item['type'] == "user"){
-					appendClient(item['text'], item['time']);
-				}
-				LASTCHATTIME = item['time'];
-			}
-			data.reverse().forEach(myFunction);
-			if(open_chat == true){
-				openFab();
-			}else{
-				closeFab();
-			}
-		}
-	});
-	return setInterval(receiveChat, 1000, filename);
 }
 
 $("#fab_send").click(appendChat);
