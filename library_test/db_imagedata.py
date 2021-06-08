@@ -473,3 +473,27 @@ newvalues = { "$unset": {"USER_UNREAD":1, "BOT_UNREAD":1} }
 imagedata.update_many(query, newvalues)
 '''
 
+'''
+# 유저가 메시지를 받은 영상만 걸러내기
+images = imagedata.find({'USER_UNREAD' : {"$exists" : True}}).sort("FILENAME",pymongo.DESCENDING)
+for image in images:
+    print(image['FILENAME'])
+'''
+
+
+# 특정 이미지 찾기
+date = '2021.05.18 10:03:44'
+date = date.replace('.','')
+date = date.replace(':','')
+date = date.replace(' ','')
+import re
+regx = re.compile("^{}".format(date), re.IGNORECASE)
+query = {'FILENAME' : regx}
+target = imagedata.find_one(query)
+if("USER_UNREAD" in target):
+    newvalues = { "$unset": {"USER_UNREAD":1}}
+    imagedata.update_one(query, newvalues)
+    print("fixed")
+else:
+    print("not found")
+
