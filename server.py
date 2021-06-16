@@ -321,7 +321,7 @@ def service(DATASET_NAME):
 
 @app.route("/hospital", methods=['GET', 'POST'])
 def hospital():
-    if not session.get('NAME'):
+    if not session.get('NAME_AI_TRAIN'):
         return redirect(url_for('login'))
     USER = session['NAME_AI_TRAIN']
 
@@ -348,7 +348,7 @@ def hospital():
 
 @app.route("/message", methods=['GET', 'POST'])
 def message():
-    if not session.get('NAME'):
+    if not session.get('NAME_AI_TRAIN'):
         return redirect(url_for('login'))
     USER = session['NAME_AI_TRAIN']
 
@@ -363,7 +363,7 @@ def message():
 
 @app.route("/model", methods=['GET', 'POST'])
 def model():
-    if not session.get('NAME'):
+    if not session.get('NAME_AI_TRAIN'):
         return redirect(url_for('login'))
     USER = session['NAME_AI_TRAIN']
 

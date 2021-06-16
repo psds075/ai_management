@@ -45,7 +45,7 @@
           {% for hospital in hospitals %}
           <tr>
             <td>
-              <a href='#'>
+              <a href='#' data-toggle="modal" data-target="#modal-lg">
                 {{hospital["NAME"]}} <i class="fas fa-copy"></i></a>
             </td>
             <td class="hide_in_mobile" style=text-align:center;>{{hospital["WEEKLYIMAGES"]}}</td>
@@ -60,9 +60,91 @@
       <!--<input type=submit value=SAVE>-->
     </form>
 
+    <div class="modal fade" id="modal-lg">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <form name=frm action="/hospital" method="POST">
+            <div class="modal-header">
+              <h4 class="modal-title">상세 정보</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="card-body">
+                <strong><i class="fas fa-id-card-alt"></i> ID</strong>
+                <input type="text-muted" class="form-control" id="ID" name="ID" value="판비병원" readonly>
+                <hr>
+                <strong><i class="fas fa-id-card-alt"></i> 병원명</strong>
+                <input type="text-muted" class="form-control" id="HOSPITAL" name="HOSPITAL" value="판비병원" autocomplete="off">
+                <hr>
+                <strong><i class="fas fa-phone-volume"></i> 휴대폰번호</strong>
+                <input type="text-muted" class="form-control" id="PHONE" name="PHONE" value="010-1234-1234" autocomplete="off">
+                <hr>
+                <strong><i class="fas fa-hospital"></i> 주소</strong>
+                <input type="text-muted" class="form-control" id="PHONE" name="PHONE" value="서울시 서초구 양재동" autocomplete="off">
+                <hr>
+                <strong><i class="far fa-file-alt mr-1"></i> 연동장비</strong>
+                <input type="text-muted" class="form-control" id="DEVICE" name="DEVICE" value="HDX" autocomplete="off">
+                <hr>
+                <strong><i class="far fa-file-alt mr-1"></i> 메모</strong>
+                <input type="text-muted" class="form-control" id="MEMO" name="MEMO" value="" autocomplete="off">
+              </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+              <button type="submit" class="btn btn-primary">수정하기</button>
+              <button type="button" class="btn btn-default" data-dismiss="modal">취소</button>
+            </div>
+          </form>
+        </div>
+        <!-- /.modal-content -->
+      </div>
+      <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
   </section>
   <!-- /.content -->
 </div>
 <!-- /.content-wrapper -->
 
 {% endblock %}
+
+
+{% block SCRIPT %}
+<script>
+  function openModal(HOSPITAL){
+    //generatePacket('MODAL', HOSPITAL, ' ');
+  }
+
+  function sendToServer(packet) {
+    console.log(packet);
+    $.ajax({
+      dataType: "JSON",
+      url: "/_JSON",
+      contentType: "application/json",
+      data: JSON.stringify(packet),
+      type: 'POST',
+      async: true,
+      success: function (result) {
+        RESULT = JSON.parse(result);
+        $('#NAME').text(RESULT['NAME']);
+        $('#CONTACT').text(RESULT['CONTACT']);
+        $('#HOSPITAL').text(RESULT['HOSPITAL']);
+        $('#MESSAGE').text(RESULT['MESSAGE']);
+      }
+    });
+  }
+
+  function generatePacket(ORDER, PARAMETER, SETVALUE) {
+    var parameter = {};
+    parameter['ORDER'] = ORDER;
+    parameter['PARAMETER'] = PARAMETER;
+    parameter['SETVALUE'] = SETVALUE;
+    parameter['ID'] = "MANAGER";
+    sendToServer(parameter);
+  }
+
+</script>
+{% endblock %}
+
