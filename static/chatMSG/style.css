@@ -97,7 +97,7 @@ ul li{
   position: fixed;
   right: 85px;
   bottom: 20px;
-  width: 400px;
+  width: 0px;
   font-size: 12px;
   line-height: 22px;
   font-family: 'Roboto';
@@ -652,39 +652,7 @@ strong.chat_time {
     opacity: 0;
   }
 }
-/* SMARTPHONES PORTRAIT */
-
-@media only screen and (min-width: 300px) {
-  .chat {
-    width: 250px;
-  }
-}
-/* SMARTPHONES LANDSCAPE */
-
-@media only screen and (min-width: 480px) {
-  .chat {
-    width: 300px;
-  }
-  .chat_field {
-    width: 65%;
-  }
-}
-/* TABLETS PORTRAIT */
-
-@media only screen and (min-width: 768px) {
-  .chat {
-    width: 300px;
-  }
-  .chat_field {
-    width: 65%;
-  }
-}
-/* TABLET LANDSCAPE / DESKTOP */
-
 @media only screen and (min-width: 1024px) {
-  .chat {
-    width: 400px;
-  }
   .chat_field {
     width: 65%;
   }

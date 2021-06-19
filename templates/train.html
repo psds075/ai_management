@@ -139,7 +139,7 @@
               </div>
               <span class="w3-tag w3-round-xxlarge w3-red w3-border w3-border-white"
               style="margin-bottom:15px;position:absolute;right:10px;">NEW</span>
-              <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+              <div class="w3-opacity xray_exp" id="xray_exp" style='font-size:12px;margin-top:5px;'>
                 <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
                 <br>
                 <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
@@ -162,7 +162,7 @@
               <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png"
                   style='height:65px;width:65px;padding:0px;'>
               </div>
-              <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+              <div class="w3-opacity xray_exp" id="xray_exp" style='font-size:12px;margin-top:5px;'>
                 <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
                 <br>
                 <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
@@ -187,7 +187,7 @@
               <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png"
                   style='height:65px;width:65px;padding:0px;'>
               </div>
-              <div class="w3-opacity" id="xray_exp" style='font-size:12px;margin-top:5px;'>
+              <div class="w3-opacity xray_exp" id="xray_exp" style='font-size:12px;margin-top:5px;'>
                 <i class='fas fa-copy w3-margin-right w3-text-blue'></i>{{data['FILENAME'][0:14]}}
                 <br>
                 <i class='far fa-hospital w3-margin-right w3-text-blue'></i>{{data['HOSPITAL']}}
@@ -873,12 +873,26 @@
     }
 
     function searchFilter() {
+
+      div_tag = $('.ARTICLE_LIST');
+      input = document.getElementById("mySearch");
+      filter = input.value.toUpperCase();
+
+      for (var i = 0; i < div_tag.length; i++) {
+        if ($(div_tag[i]).text().toUpperCase().indexOf(filter) > -1) {
+          div_tag[i].style.display = "";
+        } else {
+          div_tag[i].style.display = "none";
+        }
+      }
+
+      /*
       input = document.getElementById("mySearch");
       filter = input.value.toUpperCase();
       demo_tag = document.getElementById("Demo1");
 
       if (TAB_STATUS == 'CONFIRM') {
-        div_tag = $('.CONFIRM')
+        div_tag = $('.CONFIRM');
         for (var i = 0; i < div_tag.length; i++) {
           if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
             div_tag[i].style.display = "";
@@ -888,7 +902,7 @@
         }
       }
       if (TAB_STATUS == 'UNCONFIRM') {
-        div_tag = $('.UNCONFIRM')
+        div_tag = $('.UNCONFIRM');
         for (var i = 0; i < div_tag.length; i++) {
           if (div_tag[i].id.toUpperCase().indexOf(filter) > -1) {
             div_tag[i].style.display = "";
@@ -907,6 +921,7 @@
           }
         }
       }
+      */
     }
 
     function actual_image_width(FILENAME) {
@@ -1259,7 +1274,7 @@
             <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png" style="height:65px;width:65px;padding:0px;">
             </div>
             <span class="w3-tag w3-round-xxlarge w3-red w3-border w3-border-white" style="margin-bottom:15px;position:absolute;right:10px;">NEW</span>
-            <div class="w3-opacity" id="xray_exp" style="font-size:12px;margin-top:5px;">
+            <div class="w3-opacity xray_exp" id="xray_exp" style="font-size:12px;margin-top:5px;">
               <i class="fas fa-copy w3-margin-right w3-text-blue"></i>${filename.substr(0,14)}
               <br>
               <i class="far fa-hospital w3-margin-right w3-text-blue"></i>${hospital}
@@ -1274,7 +1289,7 @@
           <div class="w3-container" style="padding:0px">
             <div class="w3-opacity" id="xray"><img src="../static/img/pano_icon.png" style="height:65px;width:65px;padding:0px;">
             </div>
-            <div class="w3-opacity" id="xray_exp" style="font-size:12px;margin-top:5px;">
+            <div class="w3-opacity xray_exp" id="xray_exp" style="font-size:12px;margin-top:5px;">
               <i class="fas fa-copy w3-margin-right w3-text-blue"></i>${filename.substr(0,14)}
               <br>
               <i class="far fa-hospital w3-margin-right w3-text-blue"></i>${hospital}

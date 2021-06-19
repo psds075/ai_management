@@ -81,17 +81,21 @@ function toggleFab() {
 	$('#prime').toggleClass('is-float');
 	$('.chat').toggleClass('is-visible');
 	$('.fab').toggleClass('is-visible');
+	if($('#prime').hasClass('is-float')){
+		$(".chat").css("width", "400px");
+	}else{
+		$(".chat").css("width", "0px");
+	}
 }
 
-function closeFab() {
+function closeFab(){
 	if($('#prime').hasClass('is-float')){
 		toggleFab();
 	}
 }
 
-function openFab() {
+function openFab(){
 	if($('#prime').hasClass('is-float')){
-		
 	}else{
 		toggleFab();
 	}

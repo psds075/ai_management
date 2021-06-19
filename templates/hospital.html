@@ -45,7 +45,7 @@
           {% for hospital in hospitals %}
           <tr>
             <td>
-              <a href='#' data-toggle="modal" data-target="#modal-lg">
+              <a href='#' data-toggle="modal" data-target="#modal-lg" onclick="openModal('{{hospital["NAME"]}}')">
                 {{hospital["NAME"]}} <i class="fas fa-copy"></i></a>
             </td>
             <td class="hide_in_mobile" style=text-align:center;>{{hospital["WEEKLYIMAGES"]}}</td>
@@ -76,13 +76,13 @@
                 <input type="text-muted" class="form-control" id="ID" name="ID" value="판비병원" readonly>
                 <hr>
                 <strong><i class="fas fa-id-card-alt"></i> 병원명</strong>
-                <input type="text-muted" class="form-control" id="HOSPITAL" name="HOSPITAL" value="판비병원" autocomplete="off">
+                <input type="text-muted" class="form-control" id="NAME" name="NAME" value="판비병원" autocomplete="off">
                 <hr>
                 <strong><i class="fas fa-phone-volume"></i> 휴대폰번호</strong>
-                <input type="text-muted" class="form-control" id="PHONE" name="PHONE" value="010-1234-1234" autocomplete="off">
+                <input type="text-muted" class="form-control" id="CONTACT" name="CONTACT" value="010-1234-1234" autocomplete="off">
                 <hr>
                 <strong><i class="fas fa-hospital"></i> 주소</strong>
-                <input type="text-muted" class="form-control" id="PHONE" name="PHONE" value="서울시 서초구 양재동" autocomplete="off">
+                <input type="text-muted" class="form-control" id="ADDRESS" name="ADDRESS" value="서울시 서초구 양재동" autocomplete="off">
                 <hr>
                 <strong><i class="far fa-file-alt mr-1"></i> 연동장비</strong>
                 <input type="text-muted" class="form-control" id="DEVICE" name="DEVICE" value="HDX" autocomplete="off">
@@ -114,7 +114,7 @@
 {% block SCRIPT %}
 <script>
   function openModal(HOSPITAL){
-    //generatePacket('MODAL', HOSPITAL, ' ');
+    generatePacket('HOSPITAL', HOSPITAL, '');
   }
 
   function sendToServer(packet) {
@@ -128,10 +128,13 @@
       async: true,
       success: function (result) {
         RESULT = JSON.parse(result);
-        $('#NAME').text(RESULT['NAME']);
-        $('#CONTACT').text(RESULT['CONTACT']);
-        $('#HOSPITAL').text(RESULT['HOSPITAL']);
-        $('#MESSAGE').text(RESULT['MESSAGE']);
+        console.log(RESULT);
+        $('#ID').val(RESULT['ID']);
+        $('#NAME').val(RESULT['NAME']);
+        $('#CONTACT').val(RESULT['CONTACT']);
+        $('#ADDRESS').val(RESULT['ADDRESS']);
+        $('#DEVICE').val(RESULT['DEVICE']);
+        $('#MEMO').val(RESULT['MEMO']);
       }
     });
   }

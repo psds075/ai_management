@@ -170,12 +170,16 @@ def train(DATASET_NAME):
             dataset.update_one(query, newvalues)
         
         archive_check = dataset.find_one({'NAME':DATASET_NAME})['STATUS']
+
+        if not os.path.isdir(BASE_DIR+DATASET_NAME):
+            os.mkdir(BASE_DIR+DATASET_NAME)
+
         if(len(os.listdir(BASE_DIR+DATASET_NAME)) != imagedata.find({'DATASET_NAME' : DATASET_NAME}).count()):
             for filename in os.listdir(BASE_DIR+DATASET_NAME):
                 if not imagedata.find_one({'FILENAME':filename}):
                     imagedata.insert_one({'FILENAME':filename,'DATASET_NAME':DATASET_NAME, 'REVIEW_CHECK': 'UNREAD','CONFIRM_CHECK':'UNCONFIRM'})
 
-        for image in imagedata.find({'DATASET_NAME' : DATASET_NAME}):
+        for image in imagedata.find({'DATASET_NAME' : DATASET_NAME}).sort('FILENAME',-1):
             if not 'REVIEW_CHECK' in image:
                 image['REVIEW_CHECK'] = 'UNREAD'
             if not 'CONFIRM_CHECK' in image:
@@ -325,12 +329,19 @@ def hospital():
         return redirect(url_for('login'))
     USER = session['NAME_AI_TRAIN']
 
-    hospitals = []
+    if request.method == 'POST':
+        NAME = request.form['NAME']
+        CONTACT = request.form['CONTACT']
+        ADDRESS = request.form['ADDRESS']
+        DEVICE = request.form['DEVICE']
+        MEMO = request.form['MEMO']
+        myquery = {"ID":request.form["ID"]}
+        hospitaldata.update_one(myquery, { "$set": {'NAME':NAME, 'CONTACT':CONTACT, 'ADDRESS':ADDRESS, 'DEVICE':DEVICE, 'MEMO':MEMO}})
 
     today = date.today()
     yesterday = today - timedelta(days=1)
-    print(yesterday)
 
+    hospitals = []
     for hospital in hospitaldata.find({}).sort("NAME",pymongo.ASCENDING):
         hospital['WEEKLYIMAGES'] = 0
         for i in range(7):
@@ -517,14 +528,27 @@ def sending_data():
         return json.dumps(json.dumps(data))
 
     if(request.json['ORDER'] == 'MODAL'):
-        print(request.json['PARAMETER'])
         target = REQUEST.find_one({'NAME':request.json['PARAMETER']})
         result = {'NAME':target['NAME'],'CONTACT':target['CONTACT'], 'HOSPITAL':target['HOSPITAL'], 'MESSAGE':target['MESSAGE']}
+        return json.dumps(json.dumps(result))
+
+    if(request.json['ORDER'] == 'HOSPITAL'):
+        target = hospitaldata.find_one({'NAME':request.json['PARAMETER']})
+        if not 'CONTACT' in target:
+            target['CONTACT'] = ''
+        if not 'ADDRESS' in target:
+            target['ADDRESS'] = ''
+        if not 'DEVICE' in target:
+            target['DEVICE'] = ''
+        if not 'MEMO' in target:
+            target['MEMO'] = ''
+        result = {'NAME':target['NAME'],'ID':target['ID'], 'CONTACT':target['CONTACT'], 'ADDRESS':target['ADDRESS'], 'DEVICE':target['DEVICE'], 'MEMO':target['MEMO']}
         return json.dumps(json.dumps(result))
 
     if(request.json['ORDER'] == 'TARGET'):
         print(request.json)
         target = imagedata.find_one({'FILENAME':request.json['FILENAME']})
+        print(target)
         if not 'TMJ_LEFT' in target:
             target['TMJ_LEFT'] = ''
         if not 'TMJ_RIGHT' in target:
