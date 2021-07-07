@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session
+from flask import Flask, render_template, jsonify, request, send_from_directory, redirect, url_for, session, Response
 import os
 import json
 import pandas as pd
@@ -335,8 +335,10 @@ def hospital():
         ADDRESS = request.form['ADDRESS']
         DEVICE = request.form['DEVICE']
         MEMO = request.form['MEMO']
+        STATUS = request.form['STATUS']
+        DOCTOR = request.form['DOCTOR']
         myquery = {"ID":request.form["ID"]}
-        hospitaldata.update_one(myquery, { "$set": {'NAME':NAME, 'CONTACT':CONTACT, 'ADDRESS':ADDRESS, 'DEVICE':DEVICE, 'MEMO':MEMO}})
+        hospitaldata.update_one(myquery, { "$set": {'NAME':NAME, 'CONTACT':CONTACT, 'ADDRESS':ADDRESS, 'DEVICE':DEVICE, 'MEMO':MEMO, 'STATUS':STATUS, 'DOCTOR':DOCTOR}})
 
     today = date.today()
     yesterday = today - timedelta(days=1)
@@ -542,7 +544,11 @@ def sending_data():
             target['DEVICE'] = ''
         if not 'MEMO' in target:
             target['MEMO'] = ''
-        result = {'NAME':target['NAME'],'ID':target['ID'], 'CONTACT':target['CONTACT'], 'ADDRESS':target['ADDRESS'], 'DEVICE':target['DEVICE'], 'MEMO':target['MEMO']}
+        if not 'STATUS' in target:
+            target['STATUS'] = ''
+        if not 'DOCTOR' in target:
+            target['DOCTOR'] = ''
+        result = {'NAME':target['NAME'],'ID':target['ID'], 'CONTACT':target['CONTACT'], 'ADDRESS':target['ADDRESS'], 'DEVICE':target['DEVICE'], 'MEMO':target['MEMO'], 'STATUS':target['STATUS'], 'DOCTOR':target['DOCTOR']}
         return json.dumps(json.dumps(result))
 
     if(request.json['ORDER'] == 'TARGET'):
@@ -825,6 +831,53 @@ def load_chat(route):
     send = json.loads(requests.post(url, data).text)
     print(send)
     return jsonify(send)
+
+@app.route("/excel/<string:hospital>", methods=['GET', 'POST'])
+def excel_download(hospital):
+    if not session.get('NAME_AI_TRAIN'):
+        return redirect(url_for('login'))
+    USER = session['NAME_AI_TRAIN']
+
+    print(hospital)
+
+    path = 'library_test'
+    xlsname = 'hospital.xlsx'
+    df = pd.read_excel('library_test/HOSPITAL_TEMPLATE.xlsx')
+    myhospital = hospitaldata.find_one({'NAME':hospital})
+
+    if(myhospital):
+        print('test')
+
+        today = str(date.today())
+        doctor = ''
+        contact = ''
+        address = ''
+        if('DOCTOR' in myhospital):
+            doctor = myhospital['DOCTOR']
+        if('CONTACT' in myhospital):
+            contact = myhospital['CONTACT']
+        if('ADDRESS' in myhospital):
+            address = myhospital['ADDRESS']
+
+        df['문서명'].iloc[0] = today + " " + hospital
+        df['참여자 이름'].iloc[0] = doctor
+        df['이메일 또는 휴대전화번호'].iloc[0] = contact
+        df['1-텍스트'].iloc[0] = hospital # 치과의원명
+        df['2-텍스트'].iloc[0] = today # 오늘날짜(계약일)
+        df['3-텍스트'].iloc[0] = hospital # 치과의원명
+        df['4-텍스트'].iloc[0] = address # 치과 주소
+        df['5-텍스트'].iloc[0] = doctor # 치과의원 대표자 성명
+
+        df.to_excel("library_test/hospital.xlsx", index=False, na_rep='')  
+
+    with open(os.path.join(path, xlsname), 'rb') as f:
+        data = f.readlines()
+    os.remove(os.path.join(path, xlsname))
+    
+    return Response(data, headers={
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment;'+"filename*=UTF-8''{}".format(hospital.encode('utf-8'))
+    })
 
 
 if __name__ == '__main__':

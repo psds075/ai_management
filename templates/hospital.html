@@ -35,10 +35,12 @@
         <thead>
           <tr>
             <th style="min-width:80px;">병원명</th>
+            <th class="hide_in_mobile" style="text-align:center;max-width:20%;">계약상태</th>
             <th class="hide_in_mobile" style="text-align:center;max-width:20%;">7일간 업로드</th>
             <th class="hide_in_mobile" style="text-align:center;width:20%;">금일 업로드</th>
             <th style="text-align:center;min-width:130px;">최근접속일</th>
             <th style="text-align:center;min-width:130px;">최근전송일</th>
+            <th class="hide_in_mobile" style="text-align:center;width:200px;">기능</th>
           </tr>
         </thead>
         <tbody>
@@ -48,10 +50,17 @@
               <a href='#' data-toggle="modal" data-target="#modal-lg" onclick="openModal('{{hospital["NAME"]}}')">
                 {{hospital["NAME"]}} <i class="fas fa-copy"></i></a>
             </td>
+            <td class="hide_in_mobile" style=text-align:center;>{{hospital["STATUS"]}}</td>
             <td class="hide_in_mobile" style=text-align:center;>{{hospital["WEEKLYIMAGES"]}}</td>
             <td class="hide_in_mobile" style=text-align:center;>{{hospital["DAILYIMAGES"]}}</td>
             <td style=text-align:center;>{{hospital["최근접속일"]}}</td>
             <td style=text-align:center;>{{hospital["최근전송일"]}}</td>
+            <td class="hide_in_mobile" style=text-align:center;>
+              <a class="btn btn-primary btn-sm" href="/excel/{{hospital["NAME"]}}">
+                <i class="fas fa-folder"></i> EXCEL</a>
+              <a class="btn btn-danger btn-sm" href="#" onclick="alert('기능 준비중 입니다.');">
+                <i class="fas fa-trash"></i> DELETE</a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -77,6 +86,12 @@
                 <hr>
                 <strong><i class="fas fa-id-card-alt"></i> 병원명</strong>
                 <input type="text-muted" class="form-control" id="NAME" name="NAME" value="판비병원" autocomplete="off">
+                <hr>
+                <strong><i class="fas fa-id-card-alt"></i> 계약상태</strong>
+                <input type="text-muted" class="form-control" id="STATUS" name="STATUS" value="" autocomplete="off">
+                <hr>
+                <strong><i class="fas fa-id-card-alt"></i> 원장님</strong>
+                <input type="text-muted" class="form-control" id="DOCTOR" name="DOCTOR" value="" autocomplete="off">
                 <hr>
                 <strong><i class="fas fa-phone-volume"></i> 휴대폰번호</strong>
                 <input type="text-muted" class="form-control" id="CONTACT" name="CONTACT" value="010-1234-1234" autocomplete="off">
@@ -135,6 +150,8 @@
         $('#ADDRESS').val(RESULT['ADDRESS']);
         $('#DEVICE').val(RESULT['DEVICE']);
         $('#MEMO').val(RESULT['MEMO']);
+        $('#STATUS').val(RESULT['STATUS']);
+        $('#DOCTOR').val(RESULT['DOCTOR']);
       }
     });
   }
