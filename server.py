@@ -37,24 +37,14 @@ imagedata = DENTIQUB["imagedata"]
 dataset = DENTIQUB["dataset"]
 REQUEST = DENTIQUB["REQUEST"]
 
+
+# 일반 로그인 관련
 @app.route("/", methods=['GET', 'POST'])
-def index():
+def main():
     if 'NAME' in session:
         if(session['NAME_AI_TRAIN'] == 'MANAGER'):
             return redirect(url_for('train'))
-        elif(session['NAME_AI_TRAIN'] == 'DEMO'):
-            return redirect(url_for('demo'))
-        elif(session['NAME_AI_TRAIN'] == False):
-            return redirect(url_for('main'))
-        else:
-            return redirect(url_for('service'))
-    else:
-        return redirect(url_for('main'))
 
-
-# 일반 로그인 관련
-@app.route("/main", methods=['GET', 'POST'])
-def main():
     today = str(date.today())
     today_total = 0
     for hospital in hospitaldata.find({}):
@@ -74,7 +64,7 @@ def main():
         ALERT = True
     else:
         ALERT = False
-  
+
     return render_template('main.html', STATISTICS = STATISTICS, ALERT = ALERT)
 
 
