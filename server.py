@@ -848,6 +848,8 @@ def excel_download(hospital):
             contact = myhospital['CONTACT']
         if('ADDRESS' in myhospital):
             address = myhospital['ADDRESS']
+        if(len(hospital.split(' ')) == 2):
+            hospital = hospital.split(' ')[1]
 
         df['문서명'].iloc[0] = today + " " + hospital
         df['참여자 이름'].iloc[0] = doctor
