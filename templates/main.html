@@ -46,6 +46,28 @@
 			height: 700px;
 		}
 
+		@media screen and (max-width: 600px) {
+			.web {
+				visibility: hidden;
+				clear: both;
+				float: left;
+				margin: 10px auto 5px 20px;
+				width: 28%;
+				display: none;
+			}
+		}
+
+		@media screen and (min-width: 600px) {
+			.mobile {
+				visibility: hidden;
+				clear: both;
+				float: left;
+				margin: 10px auto 5px 20px;
+				width: 28%;
+				display: none;
+			}
+		}
+
 		@media only screen and (max-width: 200px) {
 			.project {
 				height: 850px;
@@ -564,14 +586,21 @@
 		</div>
 	</section>
 
-	<footer class="ftco-footer ftco-section p-5">
-		<div class="container">
-			<div class="row">
-				<div class="col-md-12 text-center">
-					<p>
-						<!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-						Copyright &copy;
-						<script>document.write(new Date().getFullYear());</script> All rights reserved InVisionLab Inc.
+	<footer class="ftco-footer ftco-section p-2 py-3">
+		<div class="container" style="max-width:1920px;padding:0px 20px 0px 20px">
+			<div class="row web">
+				<div class="col-lg-2 col-md-2">
+					<p class="mt-2 text-center mx-auto d-block" style="max-width:200px;">
+						<img src="/static/logo/Asset 13@4x.png" class="img-fluid text-center" alt="Responsive image">
+					</p>
+				</div>
+				<div class="col-lg-8 col-md-7 text-center m-0 align-middle">
+					<p class='m-0 mt-2 text-left align-middle' style="color:white;white-space:nowrap;overflow: hidden;text-overflow: ellipsis;">상호 : 주식회사 인비전랩 | 대표 : 김동현 | 사업자등록번호 : 797-86-01771 | 주소 : (05854) 서울특별시 송파구 법원로 128 G114-S127</p>
+					<p class='m-0 text-left align-middle' style="color:white;white-space:nowrap;overflow: hidden;text-overflow: ellipsis;">상담문의 : panvi@invisionlab.kr | 전화 : 070-4415-2229 | Copyright &copy; <script>document.write(new Date().getFullYear());</script> InVisionLab. All Rights Reserved.</p>
+				</div>
+				<div class="col-lg-2 col-md-3 text-center align-middle p-0 mt-3">
+					<p class="align-middle">
+						<a href="http://pf.kakao.com/_hAcJK/chat" target="_blank"><i class="fas fa-comment-dots" style="color:white;"> 치과판독비서 판비</i></a>
 					</p>
 				</div>
 			</div>
